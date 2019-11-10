@@ -55,17 +55,17 @@
 
 %% Some more packages that you may want to use.  Have a look at the
 %% file, and consult the package docs for each.
-\input{extrapackages}
+\input{utils/extrapackages}
 
 %% Our layout configuration.  DO NOT CHANGE.
-\input{layoutsetup}
+\input{utils/layoutsetup}
 
 %% Theorem environments.  You will have to adapt this for a German
 %% thesis.
-\input{theoremsetup}
+\input{utils/theoremsetup}
 
 %% Helpful macros.
-\input{macrosetup}
+\input{utils/macrosetup}
 
 %% Make document internal hyperlinks wherever possible. (TOC, references)
 %% This MUST be loaded after varioref, which is loaded in 'extrapackages'
@@ -73,7 +73,7 @@
 \usepackage[linkcolor=black,colorlinks=true,citecolor=black,filecolor=black]{hyperref}
 
 %% Support Mathematica cells
-\usepackage{mmacells}
+\usepackage{utils/mmacells}
 
 %% Keep floats within sections
 \let\origsection\section
@@ -148,6 +148,6 @@
 \bibliographystyle{plain}
 \bibliography{refs}
 
-\includepdf[pages={-}]{declaration-originality.pdf}
+\includepdf[pages={-}]{utils/declaration-originality.pdf}
 
 \end{document}
