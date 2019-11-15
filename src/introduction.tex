@@ -1,0 +1,60 @@
+\chapter{Introduction}
+\label{chapter:introduction}
+
+\setlength{\epigraphwidth}{0.43\textwidth}
+\epigraph{
+Out of S. Okubo's effect\\
+At high temperature\\
+A furcoat is sewed for the Universe\\
+Shaped for its crooked figure
+}{A. D. Sakharov \cite{Sakharov1991}}
+
+We interact with matter every day. Even you, the reader, are probably made out of matter! However, antimatter is so rare that it is considered to cost a few hundred millions Swiss francs per gram \cite{DeRujula2001}, making it the most expensive substance in the universe. Why does such a stunning difference in the abundance exist?
+
+First step to solving this problem is to define what are the required conditions that would allow the disbalance to evolve. Those conditions \cite{Dubbers2011} were described \cite{Sakharov1991} by Andrei Sakharov in 1967:
+
+\begin{itemize}
+	\item Violation of baryon number conservation
+	\item \textit{C}- and \textit{CP}-symmetry violation
+	\item Processes take place far from thermal equilibrium
+\end{itemize}
+
+Let's take a look at the \textit{CP}-symmetry and prove that a non-zero electric dipole moment of an elementary particle would indeed break it. We would select neutron as a particle of choice.
+
+The neutron in the ground state has spin of $I = 1/2$ and can be characterised completely by a single quantum number of a spin projection $m_I = \pm 1/2$. We can write down a Hamiltonian \cite{Golub1994} of this neutron in external electric and magnetic fields $\vec{E}$ and $\vec{B}$:
+
+\begin{equation}
+	\mathcal{H} = -\frac{d_n \vec{I} \cdot \vec{E} + \mu_n \vec{I} \cdot \vec{B}}{I}
+	\label{eq:neutron_hamiltonian}
+\end{equation}
+
+with $d_n$ and $\mu_n$ being the electric and magnetic moments of the neutron \cite{Golub1972}.
+
+It does not make sense to discuss the potential violation of the symmetries before we define them.  Fundamental symmetries are blended into the fabric of our Universe by providing sufficient conditions \cite{Noether1918} for the conservation laws. In our analysis we would consider three symmetries of the Standard Model: \textit{C}, \textit{P} and \textit{T}.
+
+\begin{itemize}
+	\item (C)harge –-- replaces every particle with its antiparticle: $q \rightarrow -q$
+	\item (P)arity --- inverts the physical space: $\vec{r} \rightarrow -\vec{r}$
+	\item (T)ime --- turns the time back: $t \rightarrow -t$
+\end{itemize}
+
+How would the \textit{P} and \textit{T} inversions affect \cite{Dubbers2011} the Hamiltonian from Eq. \ref{eq:neutron_hamiltonian}?
+
+Parity transformation only act on a polar vector of the electric field: $\vec{E} \rightarrow -\vec{E}$, both $\vec{B}$ and $\vec{I}$ are conserved. This brings us to
+\begin{equation}
+	\textit{P}\mathcal{H} = -\frac{d_n \vec{I} \cdot \left(-\vec{E}\right) + \mu_n \vec{I} \cdot \vec{B}}{I} \neq \mathcal{H}
+	\label{eq:neutron_hamiltonian_P}
+\end{equation}
+
+Time reversal would affect only axial vectors $\vec{B}$ and $\vec{I}$: $\vec{B} \rightarrow -\vec{B},\ \vec{I} \rightarrow -\vec{I}$, the field $\vec{E}$ is left as is:
+\begin{equation}
+	\textit{T}\mathcal{H} = -\frac{d_n \left(-\vec{I}\right) \cdot \vec{E} + \mu_n \left(-\vec{I}\right) \cdot \left( -\vec{B} \right)}{I} \neq \mathcal{H}
+	\label{eq:neutron_hamiltonian_T}
+\end{equation}
+
+Assuming that the \textit{CPT} invariance \cite{Schwinger1951} is conserved, we derive the violation of a \textit{CP}-symmetry.
+
+We have defined our motivation for determining the value of the neutron electric dipole moment. But how can we do it?
+
+
+
