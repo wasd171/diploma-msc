@@ -1,0 +1,30 @@
+\chapter{The n2EDM DAQ system}
+\label{chapter:daq}
+
+In order to measure the neutron EDM and question the theoretical predictions mentioned in the chapter \ref{chapter:introduction} it is not enough to do a single cycle of the experimental setup from the chapter \ref{chapter:experiment}. Everything comes at a price and pushing the limits of precision is not an exception. The analysis \cite{Pendlebury2004} of the previous nEDM experiment was based on data collected between 1998 and 2002, with each data-taking run lasting about 1--2 days. Thus a solid and performant data acquisition and control (DAQ) system is strongly needed.
+
+\textit{Why cannot we just reuse the DAQ from nEDM?} Apart from an experimental setup containing new modules and equipment there are \cite{Bison2018} other reasons for us to consider designing a new generation of the DAQ system:
+
+\begin{itemize}
+	\item Complexity of the codebase (one of the projects consisted of approximately 748\,332 LabView VIs) was limiting modifications
+	\item Inability to test or debug the DAQ system without the complete experimental environment, including the hardware, being connected. This was blocking data acquisition or the regular shift routine
+	\item No standardisation in connecting various hardware devices to the DAQ, resulting in the code repetition
+	\item Windows operating system lock-in
+\end{itemize}
+
+\textit{What principles is the n2EDM DAQ built on?} The new \textbf{n2EDM} DAQ aims to address the main pain points and limitations of the old \textbf{nEDM} DAQ by selecting to follow the design ideas listed below:
+
+\begin{itemize}
+	\item \textbf{TCP/IP communication}: by relying on the TCP/IP as the transport layer we can guarantee deliverability of messages in the same order as they were sent. By being an industrial standard it also simplifies connection of the new hardware nodes to the system. Not specifically TCP/IP-related bonus is that by optically decoupling our hardware it is possible to automatically provide electrical insulation
+	\item \textbf{SCPI syntax}: all commands should be written following a human-readable specification \cite{SCPIConsortium1999}. This would standardise the environment and allow for the simpler debugging
+	\item \textbf{Script control}: what can be better than a single SCPI command? Only a human-readable repeatable set of commands, providing an ability to program the behaviour of the experimental setup
+	\item \textbf{Modularity}: usage of the small loosely connected independent modules improves robustness and encourages testing. Additionally if modules can be tested without the presence of each other it also becomes simpler to implement the End-to-End (E2E) testing of the whole system with the aim of being able to arbitrary replace physical equipment with its software-only analogs. This brings us closer to an ability to run the n2EDM experiment in a simulation mode
+	\item \textbf{Linux based}: apart from being free (both as in "free as a speech" and "free as a beer") the development ecosystem of Linux provides much more opportunities compared to the Windows one. Even though the recent release \cite{Loewen2019} of the Windows Subsystem for Linux made the difference less painful, one might still prefer to run the programs directly on Linux with zero overhead
+\end{itemize}%
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=.96\textwidth]{img/daq_schema}
+	\caption{Schematic view of the n2EDM DAQ system. Based on \cite{Bison2018}.}
+\end{figure}
+
+abc
