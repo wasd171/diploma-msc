@@ -24,6 +24,120 @@ In order to measure the neutron EDM and question the theoretical predictions men
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=\textwidth]{img/daq_schema}
+	\includegraphics[width=\textwidth]{img/daq_schema.png}
 	\caption{Schematic view of the n2EDM DAQ system. Based on \cite{Bison2018}.}
+	\label{fig:daq_schema}
 \end{figure}
+
+Let's take a closer look at some of the core components of the n2EDM DAQ system presented on the Fig. \ref{fig:daq_schema}.
+
+\section{Command Distributor}
+\label{sec:distributor}
+
+\url{https://gitlab.com/n2edm/n2sim}
+
+The distributor acts like a spinal cord of the system, combining the functions of the message bus and the modules registry. Every node registers itself with the distributor by providing its name, upstream and downstream FIFOs. For example, the GUI node might provide the following information to the distributor:
+
+\begin{itemize}
+	\item \textbf{Module name}: \texttt{GUI}
+	\item \textbf{Upstream file}: \texttt{/n2edm/fifos/\_GUI\_upstream}
+	\item \textbf{Downstream file}: \texttt{/n2edm/fifos/\_GUI\_downstream}
+\end{itemize}
+
+Now another node wants to communicate with the GUI node. To do that it would send \texttt{GUI:COMMAND} to the distributor. Distributor would check whether the module with name \texttt{GUI} has been registered. If this is the case the message would be forwarded to the appropriate FIFO, in our example that would be \texttt{/n2edm/fifos/\_GUI\_downstream}.
+
+Direct communication with the distributor is possible by writing into a hardcoded path \texttt{/n2edm/\_n2sim\_input}. User can simulate the behaviour described above by executing this command:
+\begin{verbatim}
+	echo "GUI:COMMAND" >> /n2edm/_n2sim_input
+\end{verbatim}
+
+\section{Dispatcher}
+\label{sec:dispatcher}
+
+\url{https://gitlab.com/n2edm/n2dispatcher}
+
+The dispatcher provides a generic mechanism for executing commands on the central server. It should be enough to have the distributor and the dispatcher running to boot up every other module located on the same computer. One could imagine the following flow:
+\begin{enumerate}
+	\item Content of the repository \url{https://gitlab.com/n2edm/startscripts} is cloned into the \texttt{/n2edm/startable} folder of the central server
+	\item Scripts in this folder are made executable
+	\item Distributor and dispatcher are started
+	\item User sends \texttt{n2dispatcher:startch 'runcyclenumber',''} to the distributor
+	\item Dispatcher executes \texttt{/n2edm/startable/runcyclenumber} and starts the run \& cycle manager
+\end{enumerate}
+
+Dispatcher is also reachable directly via TCP/IP. A possible scenario could be that the remote node boots up and asks the dispatcher to start a corresponding COM handler. This way this node would become included into the global communication system.
+
+\section{Run \& Cycle Manager}
+\label{sec:runcyclemanager}
+
+\url{https://gitlab.com/n2edm/runcyclenumber}
+
+This node records and distributes to other nodes information from the UCN source about the run and cycle number. This is needed to be able to store and analyse experimental data. Every node that writes binary data to disk uses this information for the distinguishable file names.
+
+\section{Data Storage}
+\label{sec:data_storage}
+
+Since it is expected for the n2EDM experiment to generate loads of data it is absolutely necessary to preserve it for the further analysis. Initially data is written to the disk of the central server, however most likely it would not be able to fit the whole volume generated over 5--10 years, thus demanding a secondary larger storage. In order to simplify data management and avoid conflicts of the file versions information from the Run \& Cycle Manager is used to transfer the files only after being completed. These static data samples would be distributed further among the partner universities and additional backups. However some nodes, like a GUI node, would need the data accessible in a nearly real-time mode. For that purpose a volatile copy of the most recent files would be provided with the expected delay being below 10 seconds.
+
+\section{Timing Infrastructure}
+\label{sec:timing_infrastructure}
+
+One of the principal positions \cite{Bison2018} of the n2EDM experiment is synchronous equidistant data sampling. We introduce a heartbeat sampling rate of 10 Hz meaning that every node must write its current state to the disk every $1/10$ second and every node need to do it at the same absolute time as all other nodes. In other words, we want to be able to describe the joint state of the system 10 times per second. This approach helps to study systematic uncertainties, eases the correction of correlations and additionally enables us to represent the state evolution as a (FFT) spectrum or as an Allan deviation to simplify the data analysis.
+
+This requires all nodes to have their time synchronised between each other. We solve it by using a central GPS controlled grandmaster clock which provides time to the nodes via the precision time protocol (PTP). The accuracy guaranteed by the PTP should be enough for the most tasks, however some systems, like the Accurate Frequency Unit from the Fig. \ref{fig:daq_schema} additionally use the dedicated 10 MHz lines to further improve synchronisation veracity.
+
+\section{COM Handler}
+\label{sec:com_handler}
+
+\url{https://gitlab.com/n2edm/n2comhandler}
+
+In order to connect the remote nodes to the distributor we need to utilise their TCP/IP endpoint and stitch it together with the corresponding POSIX pipes. COM handler is a smart bridge that does that and additionally provides the following features:
+
+\begin{itemize}
+	\item Auto-registers itself with the distributor
+	\item Buffers the commands if the node is unavailable
+	\item Allows to use the response of the node by other components via generic \textit{REPLYTO} command
+	\item Handles generation of the header and data files by using information from the run \& cycle manager
+\end{itemize}
+
+As one can see, the COM handler is one of the essential parts of the n2EDM DAQ system and thus it demands a special attention to the design details.
+
+\section{Sequencer}
+\label{sec:sequencer}
+
+\url{https://gitlab.com/n2edm/sequencer}
+
+In order to program the DAQ system one needs a programming language and an environment that supports it. Sequencer provides the latter and aims to support a set of basic coding blocks that is flexible enough to describe arbitrary behaviour of the individual nodes and system as a whole:
+
+\begin{itemize}
+	\item \textbf{Conditionals}: \texttt{IF (...) THEN ... ELSE/ENDIF (...) ...}
+	\item \textbf{Cycles}: \texttt{FOR (...) DO ... DONE}
+	\item \textbf{Variables (local value)}: \texttt{SET variable = expression}
+	\item \textbf{Variables (remote value)}: \texttt{SET variable = REQUEST(...)}
+	\item \textbf{Direct source manipulation}: \texttt{(ADD/INSERT/REPLACE/DELETE)LINE}
+	\item \textbf{Navigation}: \texttt{LABEL "..."} and \texttt{GOTO "..."}
+	\item \textbf{Lifecycle management}: \texttt{SLEEP ...s}, \texttt{PAUSE}, \texttt{RESUME}
+\end{itemize}
+
+The list above is non-exhaustive but nevertheless gives an impression of how one can control the n2EDM DAQ system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
