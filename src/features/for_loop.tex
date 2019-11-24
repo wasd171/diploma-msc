@@ -1,4 +1,5 @@
 \section{Support of the \texttt{FOR} loop}
+\label{sec:for_loop}
 
 \textit{Components affected}: \textbf{Sequencer} (\ref{sec:sequencer}).
 
@@ -47,63 +48,63 @@ DONE
 \textit{Implementation details}: 
 
 \begin{itemize}
-	\item Contrary to the implementation of the \texttt{IF/ELSE/ENDIF} blocks the \texttt{FOR} loop does not need to be complete all the times, rather if the \texttt{FOR.test} yielded \texttt{False} we would set a \texttt{skipUntilDone} flag an continue an execution until the matching \texttt{DONE} is found
+	\item Contrary to the implementation of the \texttt{IF/ELSE/ENDIF} blocks the \texttt{FOR} loop does not need to be complete all the times, rather if the \texttt{FOR.test} yielded \texttt{False} we would set a \texttt{skipUntilDone} flag and continue the execution until the matching \texttt{DONE} is found
 	\item Current scope of the variables is always global, so one might prefer to use different iteration variables for nested loops to prevent confusing results
 	\item Sequencer supports powerful inline editing/removal of the lines. We do not attempt to prevent cases like \texttt{GOTO} from the loop body or \texttt{REMOVELINE} of \texttt{FOR} while iterating. However the sequencer will always try to find the root of the problem and notify the user about it
 	\item Default strategy for the non-parseable lines is to skip them
 \end{itemize}
 
-\begin{lstlisting}[
-	language=JavaScript, 
-	caption={Simplified overview of the \texttt{FOR} loop implementation},
-	label={listing:for_loop_implementation}
-]
-let skipUntilDone = false
-let forDelta = 0
-
-while (canReadNextSequenceLine) {
-	++currentLineNumber
-
-	if (skipUntilDone) {
-		if (isCurrentLine('FOR')) {
-			++forDelta
-		} else if (isCurrentLine('DONE')) {
-			--forDelta
-
-			if (forDelta == 0) {
-				skipUntilDone = false
-			}
-		}
-	} else if (isCurrentLine('FOR')) {
-		setVariable(forLine.init)
-		skipUntilDone = !evaluateExpression(forLine.test)
-
-		if (skipUntilDone) {
-			forDelta = 1
-		}
-	} else if (isCurrentLine('DO')) {
-		const savedCurrentLineNumber = currentLineNumber
-		let doneDelta = 1
-
-		do {
-			--currentLineNumber
-			if (isCurrentLine('FOR')) {
-				--doneDelta
-			} else if (isCurrentLine('DONE')) {
-				++doneDelta
-			}
-		} while (!(doneDelta == 0 || currentLineNumber == 0))
-
-		if (doneDelta != 0) {
-			currentLineNumber = savedCurrentLineNumber
-		} else {
-			setVariable(forLine.iterate)
-			const canRunAgain = evaluateExpression(forLine.test)
-
-			if (!canRunAgain) {
-				currentLineNumber = savedCurrentLineNumber
-			}
-		}
-	}
-}
-\end{lstlisting}
+%\begin{lstlisting}[
+%	language=JavaScript, 
+%	caption={Simplified overview of the \texttt{FOR} loop implementation},
+%	label={listing:for_loop_implementation}
+%]
+%let skipUntilDone = false
+%let forDelta = 0
+%
+%while (canReadNextSequenceLine) {
+%	++currentLineNumber
+%
+%	if (skipUntilDone) {
+%		if (isCurrentLine('FOR')) {
+%			++forDelta
+%		} else if (isCurrentLine('DONE')) {
+%			--forDelta
+%
+%			if (forDelta == 0) {
+%				skipUntilDone = false
+%			}
+%		}
+%	} else if (isCurrentLine('FOR')) {
+%		setVariable(forLine.init)
+%		skipUntilDone = !evaluateExpression(forLine.test)
+%
+%		if (skipUntilDone) {
+%			forDelta = 1
+%		}
+%	} else if (isCurrentLine('DO')) {
+%		const savedCurrentLineNumber = currentLineNumber
+%		let doneDelta = 1
+%
+%		do {
+%			--currentLineNumber
+%			if (isCurrentLine('FOR')) {
+%				--doneDelta
+%			} else if (isCurrentLine('DONE')) {
+%				++doneDelta
+%			}
+%		} while (!(doneDelta == 0 || currentLineNumber == 0))
+%
+%		if (doneDelta != 0) {
+%			currentLineNumber = savedCurrentLineNumber
+%		} else {
+%			setVariable(forLine.iterate)
+%			const canRunAgain = evaluateExpression(forLine.test)
+%
+%			if (!canRunAgain) {
+%				currentLineNumber = savedCurrentLineNumber
+%			}
+%		}
+%	}
+%}
+%\end{lstlisting}

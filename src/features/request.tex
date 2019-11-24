@@ -1,0 +1,262 @@
+\section{Improvement of the \texttt{REQUEST} command}
+\label{sec:request}
+
+\textit{Components affected}: \textbf{Sequencer} (\ref{sec:sequencer}).
+
+\textit{Motivation}: while the core functionality of this feature was provided by \cite{Germann2019} the implementation contained a few undesired restrictions:
+
+\begin{itemize}
+	\item At any given moment of time only 1 request could have been pending
+	\item In order to pause the execution while request was in flight, functionality of \texttt{SLEEP} command was used. This would have lead to unexpected results when combining \texttt{SLEEP}, \texttt{PAUSE}, \texttt{RESUME} and \texttt{REQUEST} blocks.
+	\item Without the feature \ref{sec:replyto} it could have not been tested thoroughly and contained a number of bugs.
+\end{itemize}
+
+\textit{Requirements}: sequencer needs to support the \texttt{SET variable = REQUEST( question, format, timeout, default)} instruction with the semantics as described below:
+
+\begin{itemize}
+	\item \texttt{question}: required quoted string starting with ":". Represents the node name and the  command that should return the value that we are interested in. Example: \texttt{":HV:OUTPUT:VOLTAGE?"}.
+	\item \texttt{format}: optional string (\texttt{\%0} if not provided). In case the target node returns multiple comma-separated values this argument in the form of \texttt{\%n} selects the n-th element starting with 1. Special case \texttt{\%0} instructs to return the node response as a whole.
+	\item \texttt{timeout}: optional int/double (\texttt{1} if not provided). Maximum amount of seconds the sequencer needs to wait for the answer.
+	\item \texttt{default}: optional int/double (\texttt{0} if not provided). The value used in case the request does not return an answer within the \texttt{REQUEST.timeout}.
+\end{itemize}
+
+First step in getting the answer is sending the request itself. Let's discuss how every \texttt{REQUEST} statement should be processed before getting sent to the distributor. \texttt{REQUEST(":HV:OUTPUT:VOLTAGE?", \%2, 1, 0)} would serve us as an example:
+
+\begin{enumerate}
+	\item We select the \texttt{nodeName} from the \texttt{REQUEST.question}, in our case it would be the \texttt{:HV}, leaving \texttt{:OUTPUT:VOLTAGE?} as a \texttt{nodeCommand}
+	\item{
+		We create a quoted \texttt{argumentsString} which looks like 
+		\begin{verbatim}
+			"sequencerNodeName:RESULT requestId, REQUEST.format"
+		\end{verbatim}
+		\begin{itemize}
+			\item \texttt{sequencerNodeName} is the name with which the sequencer was registered with the distributor, let's assume it is \texttt{SEQUENCER}.
+			\item \texttt{requestId} is a unique positive integer used to distinguish the received answers, we would select 17.
+		\end{itemize}
+		In our case \texttt{argumentsString} would be \texttt{"SEQUENCER:RESULT 17 \%2"}
+	}
+	\item{
+		We create a final \texttt{requestCommand} of the shape
+		\begin{verbatim}
+			nodeName:REPLYTO(argumentsString)nodeCommand
+		\end{verbatim}
+		or for the example that we have started with
+		\begin{verbatim}
+			HV:REPLYTO("SEQUENCER:RESULT 17 %2"):OUTPUT:VOLTAGE?
+		\end{verbatim}
+	}
+	\item The \texttt{requestCommand} is sent to the distributor.
+\end{enumerate}
+
+Second step is receiving the answer. To do that, sequencer supports the \texttt{RESULT} command. Following the example we expect to receive a string \texttt{RESULT 17 remoteValue} and execute \texttt{SET variable = remoteValue}. One could notice that the node answer looks like if the \texttt{argumentsString} from above would have been used as a template.
+
+Sequencer supports 2 sources of commands, called external and internal. External commands are the one that arrive from the distributor. Internal commands come from a sequence of commands that the sequencer stores in memory. A command can be loaded into this sequence from the external commands, for example with \texttt{ADDLINE "..."}. For this feature we are only interested in a subset of commands from both sides:
+
+\begin{itemize}
+	\item \textbf{External}:
+	\begin{itemize}
+		\item \texttt{PAUSE}. Pauses the execution of all internal commands until the \texttt{RESUME} is received.
+		\item \texttt{RESUME}. Resumes the execution of all internal commands if paused by \texttt{PAUSE}.
+		\item \texttt{RESTART}. New command, removes information about all requests, rewinds the internal sequence to the first line, cancels any blocks introduced by \texttt{PAUSE} or \texttt{SLEEP}. \textbf{Preserves} the state of all variables.
+		\item \texttt{SET variable = REQUEST(...)}. Pauses the execution of the internal commands until either an answer is returned or the timeout of the corresponding request was reached, whatever event happens earlier. Sets the variable to the received or default value.
+	\end{itemize}
+	\item \textbf{Internal}:
+	\begin{itemize}
+		\item \texttt{SLEEP ...s}. Pauses the execution of the internal sequence for a given amount of seconds. Is \textbf{not} equal to pausing the sequencer with \texttt{PAUSE}.
+		\item \texttt{SET variable = REQUEST(...)}. Same logic as if it would have been executed directly from the external source.
+	\end{itemize}
+\end{itemize}
+
+\newpage
+
+\textit{Implementation details}:
+
+\begin{itemize}
+	\item{
+		The execution of the internal sequence can be paused independently by multiple events:
+		\begin{enumerate}
+			\item \texttt{PAUSE} and reaching the end of the sequence set the internal \texttt{isPaused} flag to \texttt{True}.
+			\item \texttt{SLEEP} sets the \texttt{isSleeping} flag to \texttt{True} and saves the time at which it should be set back to \texttt{False}.
+			\item At least 1 pending request is in flight.
+		\end{enumerate}
+		The execution continues only in case of none of these blocking conditions being present.
+	}
+	\item{
+		A somewhat unexpected consequence of sharing the \texttt{SET} logic is that the \texttt{REQUEST} can be also used as part of the feature \ref{sec:for_loop}. Both \texttt{FOR.init} and \texttt{FOR.iterate} can be \texttt{REQUEST}ed, making the following line valid:
+\begin{lstlisting}[language=n2EDMScript, numbers=none]
+FOR (i = REQUEST(...); $i < 5; i = REQUEST(...))
+\end{lstlisting}
+	}
+\end{itemize}
+
+%In the Listing \ref{listing:request} we present a skeleton that handles the sending/receival of the requests as well as the management of the execution state.
+
+%\begin{lstlisting}[
+%	language=JavaScript,
+%	caption={Simplified overview of the \texttt{REQUEST} command implementation},
+%	label={listing:request}
+%]
+%interface RequestMetadata {
+%	id: number
+%	isActive: boolean
+%	variableName: string
+%	defaultValue: string
+%	start: Date
+%	deadline: Date
+%}
+%
+%const requests = new Map<number, RequestMetadata>()
+%let currentRequestId = 1
+%
+%function getPendingRequests() {
+%	const result: RequestMetadata[] = []
+%
+%	for (const request of requests.values()) {
+%		if (request.isActive) {
+%			result.push(request)
+%		}
+%	}
+%
+%	return result
+%}
+%
+%function areRequestsPending() {
+%	const pendingRequests = getPendingRequests()
+%
+%	if (pendingRequests.length > 0) {
+%		return true
+%	} else {
+%		return false
+%	}
+%}
+%
+%function cleanRequests() {
+%	requests.clear()
+%}
+%
+%function sendRequestToDistributor(
+%	question: string,
+%	format: string,
+%	timeout: string,
+%	defaultValue: string,
+%	variableName: string
+%) {
+%	++currentRequestId
+%
+%	const command = createReplyToCommand(
+%		question,
+%		currentRequestId,
+%		format,
+%		defaultValue
+%	)
+%
+%	const deadline = addSeconds(new Date(), timeout)
+%	requests.set(currentRequestId, {
+%		id: currentRequestId,
+%		isActive: true,
+%		variableName,
+%		defaultValue,
+%		start: new Date(),
+%		deadline
+%	})
+%
+%	sendCommand(command)
+%}
+%
+%function handleDistributorResponse(
+%	responseId: number, 
+%	responseValue: string
+%) {
+%	const request = requests.get(responseId)
+%
+%	if (new Date() > request.deadline) {
+%		requests.delete(responseId)
+%		return
+%	}
+%
+%	setVariable(request.variableName, responseValue)
+%	requests.delete(responseId)
+%}
+%
+%function checkRequestTimeout() {
+%	const pendingRequests = getPendingRequests()
+%
+%	for (const request of pendingRequests) {
+%		if (new Date() > request.deadline) {
+%			setVariable(request.variableName, request.defaultValue)
+%			request.isActive = false
+%		}
+%	}
+%}
+%
+%function setVariable(expression: string) {
+%	if (isCommand(expression, 'REQUEST')) {
+%		sendRequestToDistributor(
+%			question,
+%			format,
+%			timeout,
+%			defaultValue,
+%			variableName
+%		)
+%	}
+%}
+%
+%let isPaused = true
+%let isSleeping = false
+%let endOfSleep = new Date()
+%
+%function analyse(command: string) {
+%	if (isCommand(command, 'PAUSE')) {
+%		isPaused = true
+%	} else if (isCommand(command, 'RESUME')) {
+%		isPaused = false
+%	} else if (isCommand(command, 'RESTART')) {
+%		isPaused = false
+%		isSleeping = false
+%		currentLineNumber = 0
+%		cleanRequests()
+%	} else if (isCommand(command, 'SET')) {
+%		setVariable(command)
+%	} else if (isCommand(command, 'RESULT')) {
+%		handleDistributorResponse(responseId, responseValue)
+%	}
+%}
+%
+%function resume() {
+%	const blockedByRequests = areRequestsPending()
+%
+%	if (!isPaused && !isSleeping && !blockedByRequests) {
+%		if (!canReadNextSequenceLine) {
+%			isPaused = true
+%		} else {
+%			++currentLineNumber
+%
+%			if (isCurrentLine('SLEEP')) {
+%				endOfSleep = addSeconds(new Date(), seconds)
+%			} else if (isCurrentLine('SET')) {
+%				setVariable(expression)
+%			}
+%		}
+%	}
+%
+%	if (isSleeping) {
+%		if (new Date() > endOfSleep) {
+%			isSleeping = false
+%		}
+%	}
+%
+%	if (blockedByRequests) {
+%		checkRequestTimeout()
+%	}
+%}
+%
+%while (!shouldExit) {
+%	const command = readOneExternalCommand()
+%
+%	if (command.length > 0) {
+%		analyse(command)
+%	} else {
+%		resume()
+%	}
+%}
+%\end{lstlisting}
