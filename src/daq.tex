@@ -1,7 +1,7 @@
 \chapter{The n2EDM DAQ system}
 \label{chapter:daq}
 
-In order to measure the neutron EDM and question the theoretical predictions mentioned in the chapter \ref{chapter:introduction} it is not enough to do a single cycle of the experimental setup from the chapter \ref{chapter:experiment}. Everything comes at a price and pushing the limits of precision is not an exception. The analysis \cite{Pendlebury2004} of the previous nEDM experiment was based on data collected between 1998 and 2002, with each data-taking run lasting about 1--2 days. Thus a solid and performant data acquisition and control (DAQ) system is strongly needed.
+In order to measure the neutron EDM and question the theoretical predictions mentioned in the Chapter \ref{chapter:introduction} it is not enough to do a single cycle of the experimental setup from the Chapter \ref{chapter:experiment}. Everything comes at a price and pushing the limits of precision is not an exception. The analysis \cite{Pendlebury2004} of the previous nEDM experiment was based on data collected between 1998 and 2002, with each data-taking run lasting about 1--2 days. Thus a solid and performant data acquisition and control (DAQ) system is strongly needed.
 
 \textit{Why cannot we just reuse the DAQ from nEDM?} Apart from an experimental setup containing new modules and equipment there are \cite{Bison2018} other reasons for us to consider designing a new generation of the DAQ system:
 
@@ -110,7 +110,7 @@ As one can see, the COM handler is one of the essential parts of the n2EDM DAQ s
 In order to program the DAQ system one needs a programming language and an environment that supports it. Sequencer provides the latter and aims to support a set of basic coding blocks that is flexible enough to describe arbitrary behaviour of the individual nodes and system as a whole:
 
 \begin{itemize}
-	\item \textbf{Conditionals}: \texttt{IF (...) THEN ... ELSE/ENDIF (...) ...}
+	\item \textbf{Conditionals}: \texttt{IF (...) THEN ... ELSE ... ENDIF}
 	\item \textbf{Cycles}: \texttt{FOR (...) DO ... DONE}
 	\item \textbf{Variables (local value)}: \texttt{SET variable = expression}
 	\item \textbf{Variables (remote value)}: \texttt{SET variable = REQUEST(...)}
@@ -119,7 +119,7 @@ In order to program the DAQ system one needs a programming language and an envir
 	\item \textbf{Lifecycle management}: \texttt{SLEEP ...s}, \texttt{PAUSE}, \texttt{RESUME}
 \end{itemize}
 
-The list above is non-exhaustive but nevertheless gives an impression of how one can control the n2EDM DAQ system.
+The list above is non-exhaustive but nevertheless gives an impression of how one can control the n2EDM DAQ system. A more detailed explanation of the role and the capabilities of the sequencer can be found in \cite{Germann2019}.
 
 
 
