@@ -98,20 +98,31 @@
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
 
+%% Defining custom colors
+\definecolor{selectioncolor}{RGB}{253, 151, 31}
+
 %% Styling the listings
-\definecolor{codecomment}{RGB}{8, 132, 8}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codestring}{RGB}{163, 21, 21}
-\definecolor{codekeyword}{RGB}{194, 59, 227}
-\definecolor{codeemph}{RGB}{13, 13, 255}
+\definecolor{codecomment}{RGB}{159, 159, 143}
+\definecolor{codenumber}{rgb}{0.5,0.5,0.5}
+\definecolor{codestring}{RGB}{242, 90, 0}
+\definecolor{codekeyword}{RGB}{249, 38, 114}
+\definecolor{codeemph}{RGB}{174, 129, 255}
+
 
 \lstdefinelanguage{n2EDMScript}{
-  keywords={IF, THEN, ELSE, ENDIF, FOR, DO, DONE, SET, REQUEST, ADDLINE, INSERTLINE, REPLACELINE, DELETELINE, LABEL, GOTO, SLEEP, RESUME, PAUSE},
+  keywords={
+  	IF, THEN, ELSE, ENDIF, FOR, DO, DONE, SET,
+  	 REQUEST, ADDLINE, INSERTLINE, REPLACELINE, DELETELINE,
+  	  LABEL, GOTO, SLEEP, RESUME, PAUSE, 
+  	  <, >, =, +, -
+  },
+  emph={\$i},
+  alsoletter={<>=-+}
   morecomment=[l]{//},
   morecomment=[s]{/*}{*/},
   morestring=[b]',
   morestring=[b]",
-  sensitive=true
+  sensitive=true,
 }
 
 \lstdefinelanguage{JavaScript}{
@@ -134,7 +145,7 @@
     commentstyle=\color{codecomment},
     keywordstyle=\color{codekeyword},
     emphstyle=\color{codeemph},
-    numberstyle=\tiny\color{codegray},
+    numberstyle=\tiny\color{codenumber},
     stringstyle=\color{codestring},
     basicstyle=\ttfamily\footnotesize,
     breakatwhitespace=false,         
@@ -152,7 +163,7 @@
 \lstset{style=customListingStyle}
 
 %% Define some paths to be shared
-\newcommand*{\FeaturesPath}{src/features}%
+\newcommand*{\FeaturesPath}{src/features}
 
 %% Document information
 %% ====================

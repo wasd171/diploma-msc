@@ -4,7 +4,7 @@
   	\item \textbf{COM handler} --- an adapter translating the POSIX pipes to the TCP/IP connections. Almost every node in the system is connected with others through it.
   	\item \textbf{Sequencer} --- a software node orchestrating other nodes. It follows the user-generated script allowing one to describe the reproducible behaviour of the whole DAQ system with a human-readable set of commands.
   	\item \textbf{Proxy for the remote magnetometers} --- a smart bridge between the pool of the remote magnetometers and a standard TCP/IP interface of the COM handler.
-  	\item \textbf{Surrounding field compensation system} --- a system for active stabilisation of the magnetic field. It uses the data collected by the remote magnetometers and a set of controlled coils to minimise the fluctuations of the magnetic field in the area of the experiment. \textcolor{red}{Better description when I start working on it.}
+  	\item \textbf{Surrounding field compensation system} --- a system for active stabilisation of the magnetic field. It uses the a set of controlled coils to minimise the fluctuations of the magnetic field in the area of the experiment.
   \end{itemize}
   These pieces are essential for the n2EDM experiment to function, so the aim was to make them error-resistant, extendable and easy to support for the future developers.
   
