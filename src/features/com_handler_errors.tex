@@ -1,0 +1,32 @@
+\section{Improved the COM handler's networking}
+\label{sec:com_handler_network_errors}
+
+\textit{Components affected}: \textbf{COM handler} (Section \ref{sec:com_handler})
+
+\textit{Motivation}: we live in a world where the network errors are part of the reality. It is unacceptable for the COM handler being one of the most important communication bridges in the DAQ system to shut down in case of the connected node becoming unreachable over the network.
+
+\textit{Requirements}: instead of a single attempt to connect to the node when being started the COM handler needs to graciously manage the corresponding network connections:
+
+\begin{itemize}
+	\item SCPI and data connections are managed in a same fashion but independently, errors in one of them should not affect the other.
+	\item We try connecting to the node as many times as needed to establish a network link.
+	\item If the COM handler encounters an error in the SCPI or data connection it should properly close it and start reconnecting.
+	\item If the error was raised in the SCPI connection while sending a command to the node, this command should not be lost but rather resent as a first message when a new SCPI connection is established.
+\end{itemize}
+
+\textit{Implementation details}:
+
+\begin{itemize}
+	\item{
+		\texttt{:REPLYTO} commands are sent to the node when the SCPI connection becomes available. The deadline for the node response is calculated at the moment of sending the command. When set, the time window does not account for the disconnects:
+		\begin{enumerate}
+			\item Waiting time is 5 seconds.
+			\item At time $T$ the COM handler sends the SCPI command to the node.
+			\item At time $T + 1$ seconds the SCPI link goes down.
+			\item At time $T + 5$ seconds the COM handler considers the request to be expired.
+			\item At time $T + 6$ the SCPI connection is reestablished.
+			\item At time $T + 7$ the node returns the answer but it is not considered valid, even though the waiting time with the \textbf{open} SCPI connection was only 2 seconds.
+		\end{enumerate}
+	}
+	\item Persistent attempts of the COM handler to open a data connection to the \texttt{127.0.0.1} without the node being reachable might lead to an unexpected outcome --- the connection would be established with the COM handler itself! As briefly mentioned in the Feature \ref{sec:tcp_ip_sequencer} it has to do with the fact that the default data port number used to be in the ephemeral port range \cite{RichardStevens1998}. Although such behaviour is consistent with the RFC \cite{Postel1981} it is not desired while operating the DAQ system. One is advised to use both the SCPI and the data ports outside of the ephemeral range in order to prevent confusions.
+\end{itemize}

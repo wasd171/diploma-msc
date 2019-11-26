@@ -1,4 +1,4 @@
-\section{Implementation of the TCP/IP communication}
+\section{Implemented the sequencer's TCP/IP interface}
 \label{sec:tcp_ip_sequencer}
 
 \textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer})
@@ -14,7 +14,7 @@
 	\item \texttt{moduleName} string --- is required to provide a \texttt{sequencerNodeName} in the Feature \ref{sec:request}. Must be equal to the \texttt{moduleName} of the corresponding COM handler config.
 	\item \texttt{ipAddr} string --- an interface that the sequencer needs to be listening on, for example \texttt{127.0.0.1}. Might be marked obsolete by modifying the sequencer code to listen on all network interfaces. In this case it would be ignored and thus one could completely reuse the \texttt{conf\_n2comhandler.cfg}.
 	\item \texttt{cmdPort} integer --- a port number for the TCP server to listen for the SCPI commands.
-	\item \texttt{dataPort} integer --- a port number for the TCP server to accept the data connection. Following the example of the COM handler a default value of 50250 was used. However as it was later found during the implementation of the Feature \textcolor{red}{x.x} a value outside of the ephemeral port range would be preferred.
+	\item \texttt{dataPort} integer --- a port number for the TCP server to accept the data connection. Following the example of the COM handler a default value of 50250 was used. However as it was later found during the implementation of the Feature \ref{sec:com_handler_network_errors} a value outside of the ephemeral port range would be preferred.
 \end{itemize}
 
 We provide an example of the configuration file that uses the default values below on the Listing \ref{listing:sequencer_config}:
