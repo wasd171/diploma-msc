@@ -1,0 +1,34 @@
+\section{Support of the TCP/IP communication}
+\label{sec:tcp_ip_sequencer}
+
+\textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer})
+
+\textit{Motivation}: connecting the sequencer directly to the distributor via the POSIX pipes would require us to implement the logic that handles it twice: in both the sequencer and the COM handler. In order to reduce complexity we would prefer the sequencer to behave as a regular node that uses a COM handler proxy for the communication with other parts of the DAQ system.
+
+\textit{Requirements}: sequencer needs to act as a TCP/IP server by listening on 2 ports: one for the SCPI commands and one for the data connection. The only connection that would be used is the SCPI connection. Values for the corresponding port numbers should be provided via a \texttt{libconfig}-compliant configuration file.
+
+\textit{Implementation details}: a configuration file \texttt{conf\_n2comhandler.cfg} of the COM handler would serve us as an example. Following it we introduce \texttt{conf\_sequencer.cfg} that needs to be present in the same folder as the \texttt{sequencer} executable. It must contain the following fields:
+
+\begin{itemize}
+	\item \texttt{name} string --- a short human-readable description of the sequencer.
+	\item \texttt{moduleName} string --- is required to provide a \texttt{sequencerNodeName} in the Feature \ref{sec:request}. Must be equal to the \texttt{moduleName} of the corresponding COM handler config.
+	\item \texttt{ipAddr} string --- an interface that the sequencer needs to be listening on, for example \texttt{127.0.0.1}. Might be marked obsolete by modifying the sequencer code to listen on all network interfaces. In this case it would be ignored and thus one could completely reuse the \texttt{conf\_n2comhandler.cfg}.
+	\item \texttt{cmdPort} integer --- a port number for the TCP server to listen for the SCPI commands.
+	\item \texttt{dataPort} integer --- a port number for the TCP server to accept the data connection. Following the example of the COM handler a default value of 50250 was used. However as it was later found during the implementation of the Feature \textcolor{red}{x.x} a value outside of the ephemeral port range would be preferred.
+\end{itemize}
+
+We provide an example of the configuration file that uses the default values below on the Listing \ref{listing:sequencer_config}:
+
+\begin{lstlisting}[
+	caption={Example of the \texttt{conf\_sequencer.cfg}},
+	language=n2EDMScript,
+	label={listing:sequencer_config}
+]
+name = "sequencer - a n2EDM scheduler for SCPI commands";
+moduleName = "SEQUENCER";
+ipAddr = "127.0.0.1";
+cmdPort = 5025;
+dataPort = 50250;
+\end{lstlisting}
+
+It is important to notice that in the current setup the sequencer would wait for the TCP connections only on the start of the execution. Any network error or disconnection of the COM handler would cause the sequencer to print a warning and exit. Whether the sequencer needs to handle these cases differently is up for discussion.

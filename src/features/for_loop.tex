@@ -23,7 +23,7 @@ ENDIF
 \textit{Requirements}: We introduce 3 new commands that the sequencer should be able to handle:
 
 \begin{itemize}
-	\item \texttt{FOR (init; test; iterate)} or \texttt{FOR ((init; test; iterate))}. Amount of whitespace characters is arbitrary, round brackets are allowed as a part of every argument, but amount of \colorbox{selectioncolor}{\strut \texttt{(}} and \colorbox{selectioncolor}{\strut \texttt{)}} per argument needs to be balanced. Nested \texttt{FOR} blocks are allowed.
+	\item \texttt{FOR (init; test; iterate)} or \texttt{FOR ((init; test; iterate))}. Amount of whitespace characters is arbitrary, round brackets are allowed as a part of every argument, but amount of \highlight{(} and \highlight{)} per argument needs to be balanced. Nested \texttt{FOR} blocks are allowed.
 	\begin{itemize}
 		\item \texttt{init}: an expression that is being executed once to init the state of the loop variable. It follows the semantic of the \texttt{SET} operator, for example \texttt{i = 0} is valid.
 		\item \texttt{test}: an expression that produces a boolean value when evaluated. We run this check on every iteration, including the first one. Semantically similar to the argument of the \texttt{IF} block, so \texttt{\$i < 5} is allowed. If the output is \texttt{False}, skipping the lines until a \texttt{DONE} block is encountered. Otherwise continues execution as usual.
@@ -49,8 +49,8 @@ DONE
 
 \begin{itemize}
 	\item Contrary to the implementation of the \texttt{IF/ELSE/ENDIF} blocks the \texttt{FOR} loop does not need to be complete all the times. Rather if we encounter \texttt{FOR} we evaluate the \texttt{FOR.test} condition and continue executing or skipping the next lines based on the condition's output until the matching \texttt{DONE} is found
-	\item Current scope of the variables is always global, so one might prefer to use different iteration variables for nested loops to prevent confusing results
-	\item Sequencer supports powerful inline editing/removal of the lines. We do not attempt to prevent cases like \texttt{GOTO} from the loop body or \texttt{REMOVELINE} of \texttt{FOR} while iterating. However the sequencer will always try to find the root of the problem and notify the user about it
+	\item Current scope of the sequencer variables is always global, so one might prefer to use different iteration variables for nested loops to prevent confusing results
+	\item Sequencer supports powerful inline editing/removal of the lines. We do not attempt to prevent cases like \texttt{REMOVELINE} of the \texttt{FOR} line while iterating or \texttt{GOTO} from the loop body. However the sequencer will always try to find the root of the problem and notify the user about it
 	\item Default strategy for the non-parseable lines is to skip them
 \end{itemize}
 

@@ -20,20 +20,20 @@
 		Upon executing the \texttt{:REPLYTO} command the COM handler sets a time window based on the integer \texttt{scpiResponseTimeoutMs} value from the config file \texttt{conf\_n2comhandler.cfg}. We have 3 cases to handle:
 		\begin{itemize}
 			\item If nothing came over the SCPI connection with the node during the waiting interval then it means that \texttt{:REPLYTO} has timed out. We resume the execution of the SCPI commands from the distributor from the next command, if any.
-			\item If a complete message that starts with \colorbox{selectioncolor}{\strut \texttt{:}} was received then we assume that the node is trying to communicate with other components of the system. Such message is forwarded to the distributor directly as is and does not influence the \texttt{:REPLYTO} feature flow.
+			\item If a complete message that starts with \highlight{:} was received then we assume that the node is trying to communicate with other components of the system. Such message is forwarded to the distributor directly as is and does not influence the \texttt{:REPLYTO} feature flow.
 			\item Otherwise if a complete message was received while we are still within the time window of waiting for response then we consider it to be an answer to the \texttt{:REPLYTO} being in flight.
-			\item If a node answer that does not start with \colorbox{selectioncolor}{\strut \texttt{:}} was received outside of the \texttt{:REPLYTO} timeout the COM handler would skip it and print a warning.
+			\item If a node answer that does not start with \highlight{:} was received outside of the \texttt{:REPLYTO} timeout the COM handler would skip it and print a warning.
 		\end{itemize}
 		\item{
 			If a complete SCPI response was received in time then our next task is to parse it. A node might decide to return multiple comma-separated values. We split the message into chunks by using the rules below:
 			\begin{itemize}
 				\item Message is scanned from left to right
-				\item Splittable parts are separated by commas \colorbox{selectioncolor}{\strut \texttt{,}}
-				\item Escaped commas \colorbox{selectioncolor}{\strut \texttt{\textbackslash ,}} are not separators
+				\item Splittable parts are separated by commas \highlight{,}
+				\item Escaped commas \highlight{\textbackslash ,} are not separators
 				\item Commas that appear inside of a string are not separators
-				\item String starts with a quotation mark \colorbox{selectioncolor}{\strut \texttt{"}}
-				\item String might end with a quotation mark \colorbox{selectioncolor}{\strut \texttt{"}}. If there is no closing quotation mark, we consider the string to end at the end of the message. So in \texttt{"1,2,3} none of the commas would be a separator
-				\item Escaped quotation marks \colorbox{selectioncolor}{\strut \texttt{\textbackslash "}} are not considered quotation marks
+				\item String starts with a quotation mark \highlight{"}
+				\item String might end with a quotation mark \highlight{"}. If there is no closing quotation mark, we consider the string to end at the end of the message. So in \texttt{"1,2,3} none of the commas would be a separator
+				\item Escaped quotation marks \highlight{\textbackslash "} are not considered quotation marks
 			\end{itemize}
 		}
 		\item{
@@ -58,7 +58,7 @@
 			\item Command to the node
 			\item Answers from the node
 		\end{itemize}
-		must use a newline \texttt{\textbackslash n} symbol to indicate the ending of the command. Internally we have 2 string buffers: for the commands from the distributor and the answers from the node. Every received message is placed into a corresponding buffer. On every tick we attempt to select one \textbf{complete} message by splitting once on the newline symbol \texttt{\textbackslash n} starting from the beginning of the buffer. In case of success this \textbf{complete} message is placed in a corresponding sequence and treated as a SCPI command/answer. The SCPI answers buffer is not cleaned on the \texttt{:REQUEST} timeout.
+		must use a newline \highlight{\textbackslash n} symbol to indicate the ending of the command. Internally we have 2 string buffers: for the commands from the distributor and the answers from the node. Every received message is placed into a corresponding buffer. On every tick we attempt to select one \textbf{complete} message by splitting once on the newline symbol \highlight{\textbackslash n} starting from the beginning of the buffer. In case of success this \textbf{complete} message is placed in a corresponding sequence and treated as a SCPI command/answer. The SCPI answers buffer is not cleaned on the \texttt{:REQUEST} timeout.
 	}
 	\item We consider a SCPI response to be an answer to \texttt{:REPLYTO} if it was received during the timeout window. Even though the default value of \texttt{scpiResponseTimeoutMs} being 5000 should be enough for the node to return the answer in time, we cannot guarantee it. Thus a very late answer that comes during the execution of the \textbf{next} \texttt{:REPLYTO} command would be sent as an answer to the distributor.
 	\item{

@@ -99,7 +99,8 @@
 \newcommand{\xmark}{\ding{55}}%
 
 %% Defining custom colors
-\definecolor{selectioncolor}{RGB}{253, 151, 31}
+\definecolor{highlightcolor}{RGB}{253, 151, 31}
+\newcommand{\highlight}[1]{\colorbox{highlightcolor}{\strut \texttt{#1}}}
 
 %% Styling the listings
 \definecolor{codecomment}{RGB}{159, 159, 143}
