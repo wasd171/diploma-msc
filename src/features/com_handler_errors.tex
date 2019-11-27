@@ -24,8 +24,8 @@
 			\item At time $T$ the COM handler sends the SCPI command to the node.
 			\item At time $T + 1$ seconds the SCPI link goes down.
 			\item At time $T + 5$ seconds the COM handler considers the request to be expired.
-			\item At time $T + 6$ the SCPI connection is reestablished.
-			\item At time $T + 7$ the node returns the answer but it is not considered valid, even though the waiting time with the \textbf{open} SCPI connection was only 2 seconds.
+			\item At time $T + 6$ seconds the SCPI connection is reestablished.
+			\item At time $T + 7$ seconds the node returns the answer but it is not considered valid, even though the waiting time with the \textbf{open} SCPI connection was only 2 seconds.
 		\end{enumerate}
 	}
 	\item Persistent attempts of the COM handler to open a data connection to the \texttt{127.0.0.1} without the node being reachable might lead to an unexpected outcome --- the connection would be established with the COM handler itself! As briefly mentioned in the Feature \ref{sec:tcp_ip_sequencer} it has to do with the fact that the default data port number used to be in the ephemeral port range \cite{RichardStevens1998}. Although such behaviour is consistent with the RFC \cite{Postel1981} it is not desired while operating the DAQ system. One is advised to use both the SCPI and the data ports outside of the ephemeral range in order to prevent confusions.
