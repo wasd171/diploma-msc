@@ -1,0 +1,213 @@
+\section{Implemented the remote magnetometers' proxy}
+\label{sec:rm-proxy}
+
+\url{https://gitlab.com/n2edm/remote-magnetometers-proxy}
+
+\begin{figure}[h]
+	\includegraphics[width=\textwidth]{img/remote_magnetometers_proxy_schema}
+	\caption{Position of the remote magnetometers' proxy in the n2EDM DAQ system}
+	\label{fig:rm-proxy_position}
+\end{figure}
+
+\textit{Magnetometers' code}: \url{https://gitlab.com/n2edm/remote-magnetometers}
+
+\textit{Overview}: the remote magnetometers' proxy, or the \textbf{RM-proxy} for brevity, aims to be a missing link between the master node orchestrating a pool of Raspberry Pis with sensor panels and the standard TCP/IP interface of the COM handler. The remote-magnetometers project was already connected to the old LabVIEW \textbf{nEDM} DAQ system, however with this adapter it becomes possible to integrate it into the new \textbf{n2EDM} DAQ system.
+
+\textit{General principles}: in order to make the RM-proxy robust and ideally allow it to run without downtime over the whole course of the n2EDM experiment the values below were adopted:
+
+\begin{itemize}
+	\item \textbf{Handle errors} --- errors happen and the RM-proxy is not an exception. We attempt to graciously process them, for example a problem with the TCP or ZeroMQ link should lead to closing and recreating the corresponding connection. Additionally every handleable issue should generate and save a report message that can be retrieved for an error analysis. Potentially later the n2EDM DAQ system would have a dedicated exception node to process those.
+	\item \textbf{Zero data loss} --- in an experiment as complex as the n2EDM experiment every single bit of data might improve the precision of the result. Thus it is essential that the data processing and communication are decoupled from each other. Network issues should never lead to the data loss, rather it should be saved in the memory and a new attempt to send it should be made when a healthy connection is established.
+	\item \textbf{Trust the newer} --- the connected COM handler might get stuck or experience other issues that would not lead to it closing the network connection. The RM-proxy considers every new client to be the healthiest one by properly closing older connections and only allowing a single COM handler to be connected at any given moment of time.
+\end{itemize}
+
+\subsection{SCPI interface}
+\label{subsec:rm-proxy_scpi}
+
+\textit{Motivation}: even though at the current stage the RM-proxy is a passive listener to the magnetometers' master node we would still like to have a working SCPI connection for the potential future tasks, for example remotely updating the firmware on the magnetometers.
+
+\textit{Requirements}: by following the SCPI specification \cite{SCPIConsortium1999} we aim to support a single \texttt{SYStem:ERRor[:NEXT]?} command which comes in multiple flavours:
+
+\begin{itemize}
+	\item \texttt{SYSTem:ERRor?}
+	\item \texttt{SYST:ERR?}
+	\item \texttt{SYSTem:ERRor:NEXT?}
+	\item \texttt{SYST:ERR:NEXT?}
+\end{itemize}
+
+Any of the commands above send back a message of the following format:
+\begin{verbatim}
+code, "event_description;[event_info;]date"
+\end{verbatim}
+with
+\begin{itemize}
+	\item \texttt{code} required integer --- an error code from \cite{SCPIConsortium1999} that aims to provide the closest definition of the type of the issue occurred, e.g.\ \texttt{-360}.
+	\item \texttt{event\_description} required string --- a description of the corresponding \texttt{code} as specified in \cite{SCPIConsortium1999}, e.g.\ \texttt{Communication error}.
+	\item \texttt{event\_info} optional string --- a custom metadata that we might add to precisely describe the reason of raising the error, e.g.\ \texttt{Error in the SCPI connection!}.
+	\item \texttt{date} required string --- a \texttt{yyyy/mm/dd HH:MM:SS.sss} timestamp \cite{SCPIConsortium1999} of the moment the error message was created.
+\end{itemize}
+
+Internally errors are stored in a FIFO queue with a size limit of $10^5$ units. If the queue is full and we attempt to write a new message then the last message in the queue is replaced with a \texttt{-350, "Queue overflow;date"} with the \texttt{date} following the rules above.
+
+When processing the  \texttt{SYStem:ERRor[:NEXT]?} command we attempt to pick a first message in the error queue to be used as a SCPI answer. If the queue is empty we return \texttt{0, "No error;date"} where the \texttt{date} is constructed at the moment of processing the command as it was defined before.
+
+\textit{Implementation details}: if the network connection is broken when we try sending back \texttt{0, "No error;date"} this message would be placed in the FIFO queue together with the corresponding network error to be resent later.
+
+\subsection{Data interface}
+\label{subsec:rm-proxy_data}
+
+\textit{Motivation}: in order to store the data collected by the remote magnetometers we need to pack it into the appropriate \cite{Bison2018} binary format and send to the COM handler over the TCP data connection.
+
+\textit{Requirements}: we expect the messages received from the master node over the ZeroMQ connection to look like \texttt{node\_message; node\_message; ...} and to contain as many \texttt{node\_message}s as there are the remote magnetometers connected. Every \texttt{node\_message} can either be a \texttt{nan} string if the root node was not able to acquire the individual node measurements in time or a space-separated string \texttt{value\_1 value\_2 ...} otherwise, with every \texttt{value\_*} being a float. We provide a more detailed information about them in the Table \ref{tbl:node_message}:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|r|l|l|}
+	\hline
+	Position & Description & Units \\
+	\hline \hline
+	1 & Timestamp & seconds \\
+	\hline
+	2 & Magnetic field $x$ & $\mu$T \\
+	\hline
+	3 & Magnetic field $y$ & $\mu$T \\
+	\hline
+	4 & Magnetic field $z$ & $\mu$T \\
+	\hline
+	5 & Temperature & $^\circ$C \\
+	\hline
+	6 & Pressure & mbar \\
+	\hline
+	7 & Humidity & \% \\
+	\hline
+	8 & Rotational speed $x$ & radians/second \\
+	\hline
+	9 & Rotational speed $y$ & radians/second \\
+	\hline
+	10 & Rotational speed $z$ & radians/second \\
+	\hline
+	11 & Acceleration $x$ & Gs \\
+	\hline
+	12 & Acceleration $y$ & Gs \\
+	\hline
+	13 & Acceleration $z$ & Gs \\
+	\hline
+\end{tabular}
+\caption{Structure of the \texttt{node\_message}}
+\label{tbl:node_message}
+\end{table}
+
+Next step is to process the received message and pack it into the format that the COM handler would understand. Let's take a look at the n2EDM DAQ specification \cite{Bison2018}. We see that every separate field in the joint binary data message needs to be presentable as a 64 bit value with the first one always being a timestamp in nanoseconds since 1970, usually in \texttt{uint64}. Luckily we can \cite{WorkingGroupforFloating-PointArithmetic1985} represent the \texttt{NaN} value as a \texttt{double} thus we will attempt to construct a message of the following shape:
+\[
+\underbrace{\texttt{timestamp}}_{\texttt{uint64}}
+\ 
+\underbrace{\vphantom{\texttt{timestamp}} \texttt{value\_*}}_{\texttt{double} \times 13 \times \text{number of magnetometers}}
+\]
+
+We define the \texttt{timestamp} as a minimal time among all the \texttt{node\_message}s being present in a single ZeroMQ message. But one inevitably needs to handle the case of every \texttt{node\_message} in a package being \texttt{nan}, we would refer to such packages as \textbf{empty}. The specification for dealing with them is presented below:
+
+\begin{enumerate}
+	\item{
+		On RM-proxy start we wait for the first non-empty package. All empty messages received before that moment would be thrown away during the processing stage.
+		\begin{enumerate}
+			\item We use the \texttt{timestamp}s of individual \texttt{node\_message}s to calculate and cache the \texttt{timestamp} of the binary message that would be later sent to the COM handler.
+			\item Repeat the previous step until an empty message is received.
+		\end{enumerate}
+	}
+	\item{
+		On this step the RM-proxy needs to handle an empty message.
+		\begin{enumerate}
+			\item Following the Section \ref{sec:timing_infrastructure} we are able to calculate a new \texttt{timestamp} by using the refresh rate of the magnetometers and a cached \texttt{timestamp} value of the preceding package.
+			\item We cache the new \texttt{timestamp}.
+			\item{
+				\textit{Was the previous message of the master node not empty?}
+				\begin{itemize}
+					\item \textbf{Yes} --- we will send the first empty (only a timestamp is included) binary package to the COM handler. The warning is added to the error queue of the Feature \ref{subsec:rm-proxy_scpi}.
+					\item \textbf{No} --- this empty message is skipped to save the disk space.
+				\end{itemize}
+			}
+			\item Repeat until a first non-empty message is received.
+		\end{enumerate}
+	}
+	\item On a first non-empty message we go to the first step.
+\end{enumerate}
+
+\subsection{Generation of the configs}
+\label{subsec:rm-proxy_configs}
+
+\textit{Motivation}: we have 3 projects that share the configuration data: RM-proxy, COM handler and the master node. Apart from them, a configuration for the COM handler requires the specification for every binary field of the data package from the Feature \ref{subsec:rm-proxy_data}. One can see that the total number of fields to fill $1 + 13 \times N$, where $N$ is the number of magnetometers, quickly becomes unmaintainable by hand and error-prone.
+
+\textit{Requirements}: to solve this issue we introduce a single source of truth: a root config and a script that handles other configs as build artefacts. The root config is written in a \texttt{libconfig}-compatible format. 
+
+\textit{Implementation details}: Assuming that one is in the root of the RM-proxy's repository we will take a look at the \texttt{src/root\_config.cfg} on the Listing \ref{listing:rm-proxy_root} and explain every field.
+
+\begin{lstlisting}[
+	language=JavaScript,
+	caption={Root config of the RM-proxy project},
+	label={listing:rm-proxy_root}
+]
+moduleName = "MAGNETOMETERS";
+proxyIpAddress = "127.0.0.1";
+proxyScpiPort = 5025;
+proxyDataPort = 5026;
+
+masterNodeIp = "192.168.0.254";
+masterNodeBroadcastPort = 40003;
+
+nodes = (
+    {
+        number: 1,
+        location: "On the table (left)",
+        disabled: true
+    },
+    {
+        number: 2,
+        location: "On the table (center)",
+        disabled: false
+    },
+    {
+        number: 3,
+        location: "On the table (right)",
+        disabled: false
+    },
+    {
+        number: 4,
+        location: "Under the table",
+        disabled: false
+    }
+);
+\end{lstlisting}
+
+\begin{itemize}
+	\item \texttt{moduleName} required string --- a name under which the COM handler would register itself with a distributor.
+	\item \texttt{proxyIpAddress} required string --- is the IP address of the RM-proxy by using which the COM handler can connect to it.
+	\item \texttt{proxyScpiPort} and \texttt{proxyDataPort} required integers --- define on what ports should the RM-proxy listen and the COM handler should try connecting to.
+	\item \texttt{masterNodeIp} required string and \texttt{masterNodeBroadcastPort} required integer --- define the IP and broadcast port of the ZeroMQ endpoint of the master node, to which the RM-proxy connects.
+	\item{
+		\texttt{nodes} array --- describes the properties of the worker nodes. Every object might contain the following fields:
+		\begin{itemize}
+			\item \texttt{number} required integer --- is used to generate the IP address in the format \texttt{192.168.0.number} and the node name \texttt{mag\_number}. The node name is included in the header file generated by the COM handler.
+			\item \texttt{location} required string --- refers to the physical location of the magnetometer. This is included in the header file generated by the COM handler.
+			\item \texttt{disabled} optional boolean (default: \texttt{false}) --- allows to mark a single node as excluded from the data collection. Setting this value to \texttt{true} would not include the information about this node into any of the generated configs.
+			\item \texttt{controlPort} optional integer (default: \texttt{40001}) --- the control port of the magnetometer node.
+			\item \texttt{queryPort} optional integer (default: \texttt{40002}) --- the query port of the magnetometer node.
+			\item \texttt{broadcastPort} optional integer (default: \texttt{40003}) --- the broadcast port of the magnetometer node.
+			\item \texttt{logPort} optional integer (default: \texttt{40004}) --- the log port of the magnetometer node.
+		\end{itemize}
+	}
+\end{itemize}
+
+In order to generate the configs one needs to run a following command from the repository's root:
+\begin{verbatim}
+python3 src/generate_configs.py
+\end{verbatim}
+This would read \texttt{src/root\_config.cfg} and create or overwrite 3 configs:
+
+\begin{itemize}
+	\item \texttt{generated/conf\_magnetometers\_proxy.cfg} is for the RM-proxy
+	\item \texttt{generated/conf\_n2comhandler.cfg} is for the COM handler
+	\item \texttt{generated/nodes.txt} is for the master node
+\end{itemize}
+
+
+
