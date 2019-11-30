@@ -1,16 +1,16 @@
 \section{Improved the \texttt{SHOWVARIABLES?} command}
 \label{sec:showvariables}
 
-\textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer})
+\textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer}).
 
 \textit{Motivation}: with the Features \ref{sec:replyto} and \ref{sec:tcp_ip_sequencer} implemented it becomes possible to use the sequencer's output by other nodes. One of the things that might be of interest is the snapshot of the variables of the sequencer.
 
 \textit{Requirements}: the sequencer needs to handle the \texttt{SHOWVARIABLES?} command by sending a single string over the SCPI connection. This message is created with the following rules in mind:
 
 \begin{itemize}
-	\item Any variable forms a string \texttt{variableName=variableValue}
+	\item Any variable forms a string \texttt{variableName=variableValue}.
 	\item An additional variable \texttt{LINE\_EXECUTED\_NEXT} is included. Its value is defined as the number of the line in the \textbf{internal} sequence (more details in the Feature \ref{sec:request}) that would be executed afterwards. The count starts with 0.
-	\item All individual chunks are joined by using \highlight{|} as a separator
+	\item All individual chunks are joined by using \highlight{|} as a separator.
 \end{itemize}
 
 \textit{Implementation details}: assuming that the sequencer is registered with the distributor under the name \texttt{SEQUENCER} and the distributor's main FIFO file path is \texttt{/n2edm/\_n2sim\_input} the following set of the shell commands:

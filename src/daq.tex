@@ -6,20 +6,20 @@ In order to measure the neutron EDM and question the theoretical predictions men
 \textit{Why cannot we just reuse the DAQ from nEDM?} Apart from an experimental setup containing new modules and equipment there are \cite{Bison2018} other reasons for us to consider designing a new generation of the DAQ system:
 
 \begin{itemize}
-	\item Complexity of the codebase (one of the projects consisted of approximately 748\,332 LabView VIs) was limiting modifications
-	\item Inability to test or debug the DAQ system without the complete experimental environment, including the hardware, being connected. This was blocking data acquisition or the regular shift routine
-	\item No standardisation in connecting various hardware devices to the DAQ, resulting in the code repetition
-	\item Windows operating system lock-in
+	\item Complexity of the codebase (one of the projects consisted of approximately 748\,332 LabView VIs) was limiting modifications.
+	\item Inability to test or debug the DAQ system without the complete experimental environment, including the hardware, being connected. This was blocking data acquisition or the regular shift routine.
+	\item No standardisation in connecting various hardware devices to the DAQ, resulting in the code repetition.
+	\item Windows operating system lock-in.
 \end{itemize}
 
 \textit{What principles is the n2EDM DAQ built on?} The new \textbf{n2EDM} DAQ aims to address the main pain points and limitations of the old \textbf{nEDM} DAQ by selecting to follow the design ideas listed below:
 
 \begin{itemize}
-	\item \textbf{TCP/IP communication}: by relying on the TCP/IP as the transport layer we can guarantee deliverability of messages in the same order as they were sent. By being an industrial standard it also simplifies connection of the new hardware nodes to the system. Not specifically TCP/IP-related bonus is that by optically decoupling our hardware it is possible to automatically provide electrical insulation
-	\item \textbf{SCPI syntax}: all commands should be written following a human-readable specification \cite{SCPIConsortium1999}. This would standardise the environment and allow for the simpler debugging
-	\item \textbf{Script control}: what can be better than a single SCPI command? Only a human-readable repeatable set of commands, providing an ability to program the behaviour of the experimental setup
-	\item \textbf{Modularity}: usage of the small loosely connected independent modules improves robustness and encourages testing. Additionally if modules can be tested without the presence of each other it also becomes simpler to implement the End-to-End (E2E) testing of the whole system with the aim of being able to arbitrary replace physical equipment with its software-only analogs. This brings us closer to an ability to run the n2EDM experiment in a simulation mode
-	\item \textbf{Linux based}: apart from being free (both as in "free as a speech" and "free as a beer") the development ecosystem of Linux provides much more opportunities compared to the Windows one. Even though the recent release \cite{Loewen2019} of the Windows Subsystem for Linux made the difference less painful, one might still prefer to run the programs directly on Linux with zero overhead
+	\item \textbf{TCP/IP communication}: by relying on the TCP/IP as the transport layer we can guarantee deliverability of messages in the same order as they were sent. By being an industrial standard it also simplifies connection of the new hardware nodes to the system. Not specifically TCP/IP-related bonus is that by optically decoupling our hardware it is possible to automatically provide electrical insulation.
+	\item \textbf{SCPI syntax}: all commands should be written following a human-readable specification \cite{SCPIConsortium1999}. This would standardise the environment and allow for the simpler debugging.
+	\item \textbf{Script control}: what can be better than a single SCPI command? Only a human-readable repeatable set of commands, providing an ability to program the behaviour of the experimental setup.
+	\item \textbf{Modularity}: usage of the small loosely connected independent modules improves robustness and encourages testing. Additionally if the modules can be tested without the presence of each other it also becomes simpler to implement the End-to-End (E2E) testing of the whole system with the aim of being able to arbitrary replace physical equipment with its software-only analogs. This brings us closer to an ability to run the n2EDM experiment in a simulation mode.
+	\item \textbf{Linux based}: apart from being free (both as in "free as a speech" and "free as a beer") the development ecosystem of Linux provides much more opportunities compared to the Windows one. Even though the recent release \cite{Loewen2019} of the Windows Subsystem for Linux made the difference less painful, one might still prefer to run the programs directly on Linux with zero overhead.
 \end{itemize}
 
 \begin{figure}[h]
@@ -58,11 +58,11 @@ Direct communication with the distributor is possible by writing into a hardcode
 
 The dispatcher provides a generic mechanism for executing commands on the central server. It should be enough to have the distributor and the dispatcher running to boot up every other module located on the same computer. One could imagine the following flow:
 \begin{enumerate}
-	\item Content of the repository \url{https://gitlab.com/n2edm/startscripts} is cloned into the \texttt{/n2edm/startable} folder of the central server
-	\item Scripts in this folder are made executable
-	\item Distributor and dispatcher are started
-	\item User sends \texttt{n2dispatcher:startch 'runcyclenumber',''} to the distributor
-	\item Dispatcher executes \texttt{/n2edm/startable/runcyclenumber} and starts the run \& cycle manager
+	\item Content of the repository \url{https://gitlab.com/n2edm/startscripts} is cloned into the \texttt{/n2edm/startable} folder of the central server.
+	\item Scripts in this folder are made executable.
+	\item Distributor and dispatcher are started.
+	\item User sends \texttt{n2dispatcher:startch 'runcyclenumber',''} to the distributor.
+	\item Dispatcher executes \texttt{/n2edm/startable/runcyclenumber} and starts the run \& cycle manager.
 \end{enumerate}
 
 Dispatcher is also reachable directly via TCP/IP. A possible scenario could be that the remote node boots up and asks the dispatcher to start a corresponding COM handler. This way this node would become included into the global communication system.
@@ -94,10 +94,10 @@ This requires all nodes to have their time synchronised between each other. We s
 In order to connect the remote nodes to the distributor we need to utilise their TCP/IP endpoint and stitch it together with the corresponding POSIX pipes. COM handler is a smart bridge that does that and additionally provides the following features:
 
 \begin{itemize}
-	\item Auto-registers itself with the distributor
-	\item Buffers the commands if the node is unavailable
-	\item Allows to use the response of the node by other components via a generic \texttt{REPLYTO} command
-	\item Handles generation of the header and data files by using information from the run \& cycle manager
+	\item Auto-registers itself with the distributor.
+	\item Buffers the commands if the node is unavailable.
+	\item Allows to use the response of the node by other components via a generic \texttt{REPLYTO} command.
+	\item Handles generation of the header and data files by using information from the run \& cycle manager.
 \end{itemize}
 
 As one can see, the COM handler is one of the essential parts of the n2EDM DAQ system and thus it demands a special attention to the design details.

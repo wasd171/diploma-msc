@@ -6,7 +6,7 @@
 \textit{Motivation}: while the core functionality of this feature was provided by \cite{Germann2019} the implementation contained a few undesired restrictions:
 
 \begin{itemize}
-	\item At any given moment of time only 1 request could have been pending
+	\item At any given moment of time only 1 request could have been pending.
 	\item In order to pause the execution while request was in flight, functionality of \texttt{SLEEP} command was used. This would have lead to unexpected results when combining \texttt{SLEEP}, \texttt{PAUSE}, \texttt{RESUME} and \texttt{REQUEST} blocks.
 	\item Without the Feature \ref{sec:replyto} it could have not been tested thoroughly and contained a number of bugs.
 \end{itemize}
@@ -14,16 +14,16 @@
 \textit{Requirements}: sequencer needs to support the \texttt{SET variable = REQUEST( question, format, timeout, default)} instruction with the semantics as described below:
 
 \begin{itemize}
-	\item \texttt{question}: required quoted string starting with \highlight{:}. Represents the node name and the  command that should return the value that we are interested in. Example: \texttt{":HV:OUTPUT:VOLTAGE?"}.
-	\item \texttt{format}: optional string (\texttt{\%0} if not provided). In case the target node returns multiple comma-separated values this argument in the form of \texttt{\%n} selects the n-th element starting with 1. Special case \texttt{\%0} instructs to return the node response as a whole.
-	\item \texttt{timeout}: optional int/double (\texttt{1} if not provided). Maximum amount of seconds the sequencer needs to wait for the answer.
-	\item \texttt{default}: optional int/double (\texttt{0} if not provided). The value used in case the request does not return an answer within the \texttt{REQUEST.timeout}.
+	\item \texttt{question}, required quoted string starting with \highlight{:}. Represents the node name and the  command that should return the value that we are interested in. Example: \texttt{":HV:OUTPUT:VOLTAGE?"}.
+	\item \texttt{format}, optional string (default: \texttt{\%0}). In case the target node returns multiple comma-separated values this argument in the form of \texttt{\%n} selects the n-th element starting with 1. Special case \texttt{\%0} instructs to return the node response as a whole.
+	\item \texttt{timeout}, optional integer/double (default: \texttt{1}). Maximum amount of seconds the sequencer needs to wait for the answer.
+	\item \texttt{default}, optional integer/double (default: \texttt{0}). The value used in case the request does not return an answer within the \texttt{REQUEST.timeout}.
 \end{itemize}
 
 First step in getting the answer is sending the request itself. Let's discuss how every \texttt{REQUEST} statement should be processed before getting sent to the distributor. \texttt{REQUEST(":HV:OUTPUT:VOLTAGE?", \%2, 1, 0)} would serve us as an example:
 
 \begin{enumerate}
-	\item We select the \texttt{nodeName} from the \texttt{REQUEST.question}, in our case it would be the \texttt{:HV}, leaving \texttt{:OUTPUT:VOLTAGE?} as a \texttt{nodeCommand}
+	\item We select the \texttt{nodeName} from the \texttt{REQUEST.question}, in our case it would be the \texttt{:HV}, leaving \texttt{:OUTPUT:VOLTAGE?} as a \texttt{nodeCommand}.
 	\item{
 		We create a quoted \texttt{argumentsString} which looks like 
 		\begin{verbatim}

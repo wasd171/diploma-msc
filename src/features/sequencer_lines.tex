@@ -1,34 +1,34 @@
 \section{Improved the \texttt{SHOWLINES?} command}
 \label{sec:showlines}
 
-\textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer})
+\textit{Components affected}: \textbf{Sequencer} (Section \ref{sec:sequencer}).
 
 \textit{Motivation}: similar to the Feature \ref{sec:showvariables} we would like to return the information about the lines of the internal sequence over the SCPI connection.
 
 \textit{Requirements}: we process the lines for \texttt{SHOWLINES?} command almost like we process the variables for the \texttt{SHOWVARIABLES?} command. There are, however, a few differences to keep in mind:
 
 \begin{itemize}
-	\item Syntax of individual chunks is changed to \texttt{lineNumber:lineValue} with \texttt{lineNumber} starting from 0
-	\item \texttt{LINE\_EXECUTED\_NEXT} needs to be added as a virtual \texttt{lineNumber}
-	\item Line chunks are joined by using \highlight{|} as a separator
+	\item Syntax of individual chunks is changed to \texttt{lineNumber:lineValue} with \texttt{lineNumber} starting from 0.
+	\item \texttt{LINE\_EXECUTED\_NEXT} needs to be added as a virtual \texttt{lineNumber}.
+	\item Line chunks are joined by using \highlight{|} as a separator.
 	\item When joining the lines all virtual lines need to be in the beginning. Real lines following the virtual lines block need to be presented in the same order as they are kept in the sequencer's memory.
 	\item{
 		Contrary to the variable names and values, the \texttt{lineValue} might contain \highlight{|} and thus it could be escaped. We use a logic that somewhat resembles the one presented in the Feature \ref{sec:replyto}:
 		\begin{itemize}
-			\item The line needs escaping if it contains at least one qualified \highlight{|}
-			\item The line content is scanned from left to right		
-			\item Escaped separators \highlight{\textbackslash |} do not qualify
-			\item Symbol \highlight{|} that appears inside of a string does not qualify
-			\item String starts with a quotation mark \highlight{"}
-			\item String might end with a quotation mark \highlight{"}. If there is no closing quotation mark, we consider the string to end at the end of the line. So in \texttt{"text|moretext|} none of the \highlight{|} would qualify
-			\item Escaped quotation marks \highlight{\textbackslash "} are not considered quotation marks
+			\item The line needs escaping if it contains at least one qualified \highlight{|}.
+			\item The line content is scanned from left to right	.
+			\item Escaped separators \highlight{\textbackslash |} do not qualify.
+			\item Symbol \highlight{|} that appears inside of a string does not qualify.
+			\item String starts with a quotation mark \highlight{"}.
+			\item String might end with a quotation mark \highlight{"}. If there is no closing quotation mark, we consider the string to end at the end of the line. So in \texttt{"text|moretext|} none of the \highlight{|} would qualify.
+			\item Escaped quotation marks \highlight{\textbackslash "} are not considered quotation marks.
 		\end{itemize}
 	}
 	\item{
 		If the line's content needs escaping, we would form the \texttt{lineValue} by following these rules:
 		\begin{enumerate}
-			\item All double quotes \highlight{"} are transformed into \highlight{\textbackslash "}
-			\item Escaped content is placed between two quotation marks \highlight{"}
+			\item All double quotes \highlight{"} are transformed into \highlight{\textbackslash "}.
+			\item Escaped content is placed between two quotation marks \highlight{"}.
 		\end{enumerate}
 	}
 \end{itemize}

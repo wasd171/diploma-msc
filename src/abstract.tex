@@ -1,10 +1,10 @@
 \begin{abstract}
-  Just as nowadays no serious experiment can be built and conducted by a single person, the experiment itself cannot consist of a single tool. The n2EDM experiment aims to achieve an ambitious goal: to measure the electric dipole moment of neutron with a new level of precision. Such challenging project demands the need for the complex and well-connected system. This thesis intends to describe the development of new and improvement of existing components, such as:
+  Just as nowadays no serious experiment can be built and conducted by a single person, the experiment itself cannot consist of a single tool. The n2EDM experiment aims to achieve an ambitious goal: to measure the electric dipole moment of a neutron with a new level of precision. Such challenging project demands the need for the complex and well-connected system. This thesis intends to describe the development of new and improvement of existing components, such as:
   \begin{itemize}
-  	\item \textbf{COM handler} --- an adapter translating the POSIX pipes to the TCP/IP connections. Almost every node in the system is connected with others through it.
+  	\item \textbf{COM handler} --- an adapter translating the POSIX pipes to the TCP/IP connections. Almost every node in the DAQ system is connected with others through it.
   	\item \textbf{Sequencer} --- a software node orchestrating other nodes. It follows the user-generated script allowing one to describe the reproducible behaviour of the whole DAQ system with a human-readable set of commands.
   	\item \textbf{Proxy for the remote magnetometers} --- a smart bridge between the pool of the remote magnetometers and a standard TCP/IP interface of the COM handler.
-  	\item \textbf{Surrounding field compensation system} --- a system for active stabilisation of the magnetic field. It uses the a set of controlled coils to minimise the fluctuations of the magnetic field in the area of the experiment.
+  	\item \textbf{Surrounding field compensation system} --- a system for the active stabilisation of the magnetic field. It uses the a set of controlled coils to minimise the magnetic fluctuations in the area of the n2EDM experiment.
   \end{itemize}
   These pieces are essential for the n2EDM experiment to function, so the aim was to make them error-resistant, extendable and easy to support for the future developers.
   

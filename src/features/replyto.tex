@@ -1,7 +1,7 @@
 \section{Implemented the \texttt{REPLYTO} command}
 \label{sec:replyto}
 
-\textit{Components affected}: \textbf{COM Handler} (Section \ref{sec:com_handler})
+\textit{Components affected}: \textbf{COM Handler} (Section \ref{sec:com_handler}).
 
 \textit{Motivation}: in order to create a truly interconnected DAQ system it is not enough to be able to send SCPI commands to our nodes. We also need to be able to use their responses for a feedback loop of any kind. By implementing this feature on the COM handler level it  would be possible to return a response of any node.
 
@@ -27,19 +27,19 @@
 		\item{
 			If a complete SCPI response was received in time then our next task is to parse it. A node might decide to return multiple comma-separated values. We split the message into chunks by using the rules below:
 			\begin{itemize}
-				\item Message is scanned from left to right
-				\item Splittable parts are separated by commas \highlight{,}
-				\item Escaped commas \highlight{\textbackslash ,} are not separators
-				\item Commas that appear inside of a string are not separators
-				\item String starts with a quotation mark \highlight{"}
-				\item String might end with a quotation mark \highlight{"}. If there is no closing quotation mark, we consider the string to end at the end of the message. So in \texttt{"1,2,3} none of the commas would be a separator
-				\item Escaped quotation marks \highlight{\textbackslash "} are not considered quotation marks
+				\item Message is scanned from left to right.
+				\item Splittable parts are separated by commas \highlight{,}.
+				\item Escaped commas \highlight{\textbackslash ,} are not separators.
+				\item Commas that appear inside of a string are not separators.
+				\item String starts with a quotation mark \highlight{"}.
+				\item String might end with a quotation mark \highlight{"}. If there is no closing quotation mark, we consider the string to end at the end of the message. So in \texttt{"1,2,3} none of the commas would be a separator.
+				\item Escaped quotation marks \highlight{\textbackslash "} are not considered quotation marks.
 			\end{itemize}
 		}
 		\item{
 			After splitting the message we need to extract the correct \texttt{answerValue} by using the format argument, in our example that would be \texttt{\%2}
 			\begin{itemize}
-				\item \texttt{\%0} means that no splitting is required and \texttt{answerValue} is set to the received message as a whole
+				\item \texttt{\%0} means that no splitting is required and \texttt{answerValue} is set to the received message as a whole.
 				\item \texttt{\%n} means that \texttt{answerValue} is set to the \texttt{n}-th part of the split message with count starting with 1. If the message contained no separators then \texttt{\%0} and \texttt{\%1} produce the equal output. If the split message contains less than \texttt{n} parts we set \texttt{answerValue} to an empty unquoted string.
 			\end{itemize}
 		}
@@ -53,28 +53,28 @@
 	\item{
 		In the \textit{requirements} above one can often see a combination of words \textbf{complete message}. Neither TCP/IP nor FIFO files guarantee that the message sent as one would be received as one. All SCPI messages, such as
 		\begin{itemize}
-			\item Commands from the distributor
-			\item Answers to the distributor
-			\item Command to the node
-			\item Answers from the node
+			\item Commands from the distributor.
+			\item Answers to the distributor.
+			\item Command to the node.
+			\item Answers from the node.
 		\end{itemize}
 		must use a newline \highlight{\textbackslash n} symbol to indicate the ending of the command. Internally we have 2 string buffers: for the commands from the distributor and the answers from the node. Every received message is placed into a corresponding buffer. On every tick we attempt to select one \textbf{complete} message by splitting once on the newline symbol \highlight{\textbackslash n} starting from the beginning of the buffer. In case of success this \textbf{complete} message is placed in a corresponding sequence and treated as a SCPI command/answer. The SCPI answers buffer is not cleaned on the \texttt{:REQUEST} timeout.
 	}
-	\item We consider a SCPI response to be an answer to \texttt{:REPLYTO} if it was received during the timeout window. Even though the default value of \texttt{scpiResponseTimeoutMs} being 5000 should be enough for the node to return the answer in time, we cannot guarantee it. Thus a very late answer that comes during the execution of the \textbf{next} \texttt{:REPLYTO} command would be sent as an answer to the distributor.
+	\item We consider a SCPI response to be an answer to \texttt{REPLYTO} if it was received during the timeout window. Even though the default value of \texttt{scpiResponseTimeoutMs} being 5000 should be enough for the node to return the answer in time, we cannot guarantee it. Thus a very late answer that comes during the execution of the \textbf{next} \texttt{REPLYTO} command would be sent as an answer to the distributor.
 	\item{
 		Combining both points we might get a very confusing situation:
 		\begin{enumerate}
-			\item COM handler executes first \texttt{:REPLYTO}
-			\item Node sends back \texttt{verylonganswer\textbackslash n}
+			\item COM handler executes first \texttt{REPLYTO}.
+			\item Node sends back \texttt{verylonganswer\textbackslash n}.
 			\item The answer does not fit in a single package and the COM handler received only \texttt{very} and adds it to the answer buffer.
-			\item Due to the network error the connection between the node and the COM handler is broken. First \texttt{:REPLYTO} times out.
-			\item Network connection is reestablished
-			\item COM handler executes second \texttt{:REPLYTO}
-			\item Node sends back \texttt{shortanswer\textbackslash n}
+			\item Due to the network error the connection between the node and the COM handler is broken. First \texttt{REPLYTO} times out.
+			\item Network connection is reestablished.
+			\item COM handler executes second \texttt{REPLYTO}.
+			\item Node sends back \texttt{shortanswer\textbackslash n}.
 			\item Depending on the node logic, 2 situations would be possible:
 			\begin{itemize}
-				\item Node tries to send the remaining \texttt{longanswer\textbackslash n} first. COM handler would have an answer buffer \texttt{verylonganswer\textbackslash n} and send it as a result of the second \texttt{:REPLYTO}. The received message \texttt{shortanswer\textbackslash n} would be appended to the buffer and depending on timing either ignored or sent as a reply to the third \texttt{:REPLYTO}
-				\item Node skips the \texttt{longanswer\textbackslash n} and decides to respond only with \texttt{shortanswer\textbackslash n}. COM handler would have an answer buffer \texttt{veryshortanswer\textbackslash n} and return it as a result of the second \texttt{:REPLYTO}.
+				\item Node tries to send the remaining \texttt{longanswer\textbackslash n} first. COM handler would have an answer buffer \texttt{verylonganswer\textbackslash n} and send it as a result of the second \texttt{REPLYTO}. The received message \texttt{shortanswer\textbackslash n} would be appended to the buffer and depending on timing either ignored or sent as a reply to the third \texttt{REPLYTO}.
+				\item Node skips the \texttt{longanswer\textbackslash n} and decides to respond only with \texttt{shortanswer\textbackslash n}. COM handler would have an answer buffer \texttt{veryshortanswer\textbackslash n} and return it as a result of the second \texttt{REPLYTO}.
 			\end{itemize}
 		\end{enumerate}
 		One can see that with a lot of requests and slow nodes that might become an issue, thus the COM handler would print a warning if its queue of the pending SCPI commands has more than one item.
