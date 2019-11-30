@@ -5,10 +5,10 @@
 
 \textit{Motivation}: in order to create a truly interconnected DAQ system it is not enough to be able to send SCPI commands to our nodes. We also need to be able to use their responses for a feedback loop of any kind. By implementing this feature on the COM handler level it  would be possible to return a response of any node.
 
-\textit{Requirements}: following the contract of the \texttt{REQUEST} Feature \ref{sec:request} the COM handler needs to support a \texttt{:REPLYTO} command. We would like to achieve a behaviour as described below:
+\textit{Requirements}: following the contract of the \texttt{REQUEST} Feature \ref{sec:request} the COM handler needs to support a \texttt{REPLYTO} command. We would like to achieve a behaviour as described below:
 
 \begin{itemize}
-	\item Only one \texttt{:REPLYTO} command can be processed at a time. When it is executed the COM handler should continue accepting commands from the distributor. These commands would be buffered in memory until the pending \texttt{:REPLYTO} command completes.
+	\item Only one \texttt{REPLYTO} command can be processed at a time. When it is executed the COM handler should continue accepting commands from the distributor. These commands would be buffered in memory until the pending \texttt{REPLYTO} command completes.
 	\item{
 		Given the example from the Feature \ref{sec:request}
 		\begin{verbatim}
@@ -17,12 +17,12 @@
 		we will send \texttt{OUTPUT:VOLTAGE?} to the node and pause the further execution of the SCPI commands.
 	}
 	\item{
-		Upon executing the \texttt{:REPLYTO} command the COM handler sets a time window based on the integer \texttt{scpiResponseTimeoutMs} value from the config file \texttt{conf\_n2comhandler.cfg}. We have 3 cases to handle:
+		Upon executing the \texttt{REPLYTO} command the COM handler sets a time window based on the integer \texttt{scpiResponseTimeoutMs} value from the config file \texttt{conf\_n2comhandler.cfg}. We have 3 cases to handle:
 		\begin{itemize}
-			\item If nothing came over the SCPI connection with the node during the waiting interval then it means that \texttt{:REPLYTO} has timed out. We resume the execution of the SCPI commands from the distributor from the next command, if any.
-			\item If a complete message that starts with \highlight{:} was received then we assume that the node is trying to communicate with other components of the system. Such message is forwarded to the distributor directly as is and does not influence the \texttt{:REPLYTO} feature flow.
-			\item Otherwise if a complete message was received while we are still within the time window of waiting for response then we consider it to be an answer to the \texttt{:REPLYTO} being in flight.
-			\item If a node answer that does not start with \highlight{:} was received outside of the \texttt{:REPLYTO} timeout the COM handler would skip it and print a warning.
+			\item If nothing came over the SCPI connection with the node during the waiting interval then it means that \texttt{REPLYTO} has timed out. We resume the execution of the SCPI commands from the distributor from the next command, if any.
+			\item If a complete message that starts with \highlight{:} was received then we assume that the node is trying to communicate with other components of the system. Such message is forwarded to the distributor directly as is and does not influence the \texttt{REPLYTO} feature flow.
+			\item Otherwise if a complete message was received while we are still within the time window of waiting for response then we consider it to be an answer to the \texttt{REPLYTO} being in flight.
+			\item If a node answer that does not start with \highlight{:} was received outside of the \texttt{REPLYTO} timeout the COM handler would skip it and print a warning.
 		\end{itemize}
 		\item{
 			If a complete SCPI response was received in time then our next task is to parse it. A node might decide to return multiple comma-separated values. We split the message into chunks by using the rules below:

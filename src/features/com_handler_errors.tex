@@ -18,7 +18,7 @@
 
 \begin{itemize}
 	\item{
-		\texttt{:REPLYTO} commands are sent to the node when the SCPI connection becomes available. The deadline for the node response is calculated at the moment of sending the command. When set, the time window does not account for the disconnects:
+		\texttt{REPLYTO} commands are sent to the node when the SCPI connection becomes available. The deadline for the node response is calculated at the moment of sending the command. When set, the time window does not account for the disconnects:
 		\begin{enumerate}
 			\item Waiting time is 5 seconds.
 			\item At time $T$ the COM handler sends the SCPI command to the node.
