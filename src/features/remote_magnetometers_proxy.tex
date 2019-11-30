@@ -58,7 +58,7 @@ When processing the  \texttt{SYStem:ERRor[:NEXT]?} command we attempt to pick a 
 
 \textit{Motivation}: in order to store the data collected by the remote magnetometers we need to pack it into the appropriate \cite{Bison2018} binary format and send to the COM handler over the TCP data connection.
 
-\textit{Requirements}: we expect the messages received from the master node over the ZeroMQ connection to look like \texttt{node\_message; node\_message; \ldots} and to contain as many \texttt{node\_message}s as there are the remote magnetometers connected. Every \texttt{node\_message} can either be a \texttt{nan} string if the root node was not able to acquire the individual node measurements in time or a space-separated string \texttt{value\_1 value\_2 \ldots} otherwise, with every \texttt{value\_*} being a float. We provide a more detailed information about them in the Table \ref{tbl:node_message}:
+\textit{Requirements}: we expect the messages received from the master node over the ZeroMQ connection to look like \texttt{node\_message; node\_message; \ldots} and to contain as many \texttt{node\_message}s as there are the remote magnetometers connected. Every \texttt{node\_message} can either be a \texttt{nan} string if the root node was not able to acquire the individual node measurements in time or a space-separated string \texttt{value\_1 value\_2 \ldots} otherwise, with every \texttt{value\_*} being a float. The Table \ref{tbl:node_message} dives into more details:
 
 \begin{table}[h]
 \centering

@@ -12,7 +12,7 @@
 %% ========
 
 %% LaTeX Font encoding -- DO NOT CHANGE
-\usepackage[T1]{fontenc}
+\usepackage[OT1]{fontenc}
 
 %% Babel provides support for languages.  'english' uses British
 %% English hyphenation and text snippets like "Figure" and
@@ -160,6 +160,9 @@
  
 \lstset{style=customListingStyle}
 
+%% This is needed for nice underscores in the \texttt
+\chardef\_=`_
+
 %% Define some paths to be shared
 \newcommand*{\FeaturesPath}{src/features}
 
@@ -210,8 +213,7 @@
 \input{src/conclusions}
 
 \appendix
-%\input{appendix_macalpine}
-%\input{appendix_siverns}
+\input{src/appendix_sequencer}
 
 \backmatter
 
