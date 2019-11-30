@@ -75,7 +75,7 @@ Sequencer supports 2 sources of commands, called external and internal. External
 	\item{
 		The execution of the internal sequence can be paused independently by multiple events:
 		\begin{enumerate}
-			\item \texttt{PAUSE} and reaching the end of the sequence set the internal \texttt{isPaused} flag to \texttt{True}.
+			\item Both \texttt{PAUSE} and reaching the end of the sequence set the internal \texttt{isPaused} flag to \texttt{True}.
 			\item \texttt{SLEEP} sets the \texttt{isSleeping} flag to \texttt{True} and saves the time at which it should be set back to \texttt{False}.
 			\item At least 1 pending request is in flight.
 		\end{enumerate}

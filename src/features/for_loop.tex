@@ -23,7 +23,7 @@ ENDIF
 \textit{Requirements}: We introduce 3 new commands that the sequencer should be able to handle:
 
 \begin{itemize}
-	\item \texttt{FOR (init; test; iterate)} or \texttt{FOR ((init; test; iterate))}. Amount of whitespace characters is arbitrary, round brackets are allowed as a part of every argument, but amount of \highlight{(} and \highlight{)} per argument needs to be balanced. Nested \texttt{FOR} blocks are allowed.
+	\item \texttt{FOR (init; test; iterate)} or \texttt{FOR ((init; test; iterate))}. The amount of whitespace characters is arbitrary, round brackets are allowed as a part of every argument, but amount of \highlight{(} and \highlight{)} per argument needs to be balanced. Nested \texttt{FOR} blocks are allowed.
 	\begin{itemize}
 		\item \texttt{init}: an expression that is being executed once to init the state of the loop variable. It follows the semantic of the \texttt{SET} operator, for example \texttt{i = 0} is valid.
 		\item \texttt{test}: an expression that produces a boolean value when evaluated. We run this check on every iteration, including the first one. Semantically similar to the argument of the \texttt{IF} block, so \texttt{\$i < 5} is allowed. If the output is \texttt{False}, skipping the lines until a \texttt{DONE} block is encountered. Otherwise continues execution as usual.

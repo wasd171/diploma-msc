@@ -182,7 +182,7 @@ nodes = (
 	\item \texttt{moduleName}, required string --- a name under which the COM handler would register itself with a distributor.
 	\item \texttt{proxyIpAddress}, required string --- is the IP address of the RM-proxy by using which the COM handler can connect to it.
 	\item \texttt{proxyScpiPort} and \texttt{proxyDataPort}, required integers --- define on what ports should the RM-proxy listen and the COM handler should try connecting to.
-	\item \texttt{masterNodeIp}, required string and \texttt{masterNodeBroadcastPort} required integer --- define the IP and broadcast port of the ZeroMQ endpoint of the master node, to which the RM-proxy connects.
+	\item \texttt{masterNodeIp}, required string; \texttt{masterNodeBroadcastPort}, required integer --- define the IP and broadcast port of the ZeroMQ endpoint of the master node, to which the RM-proxy connects.
 	\item{
 		\texttt{nodes}, array --- describes the properties of the worker nodes. Every object might contain the following fields:
 		\begin{itemize}
