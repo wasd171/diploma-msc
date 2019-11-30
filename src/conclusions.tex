@@ -1,0 +1,71 @@
+\chapter{Conclusions}
+
+Looking back it is possible to say that the initial task of improving the ease of use and the connectivity of the n2EDM DAQ system was successfully accomplished. The work conducted over the course of this thesis allows both the users and the future developers to be more efficient when operating or building the infrastructure for the n2EDM experiment.
+
+\textit{Components affected}:
+\begin{itemize}
+	\item{
+		\textbf{Sequencer} (Section \ref{sec:sequencer})
+		\begin{itemize}
+			\item Added \texttt{FOR} loop abstraction (Feature \ref{sec:for_loop}) simplifies the execution of the repeating code blocks.
+			\item Better \texttt{REQUEST} command (Feature \ref{sec:request}) opens the doors to more predictable handling of the asynchronous patterns.
+			\item Standard TCP/IP interface (Feature \ref{sec:tcp_ip_sequencer}) brings all the features that the integration with the COM handler supports.
+			\item Improved \texttt{SHOWVARIABLES?} command (Feature \ref{sec:showvariables}) sending the result over the SCPI connection makes it possible for the other nodes to know the internal state of the sequencer.
+			\item Enhanced \texttt{SHOWLINES?} command (Feature \ref{sec:showlines}) allows the precise remote SCPI control of the sequencer's execution.
+		\end{itemize}
+	}
+	\item{
+		\textbf{COM Handler} (Section \ref{sec:com_handler})
+		\begin{itemize}
+			\item Implemented \texttt{REPLYTO} command (Feature \ref{sec:replyto}) enables the COM handler to respond with the result of executing the SCPI command by the node regardless of the node type.
+			\item Revised approach to the TCP/IP networking (Feature \ref{sec:com_handler_network_errors}) makes the COM handler suitable for operating in the real life conditions without unintentional downtime.
+		\end{itemize}
+	}
+	\item{
+		\textbf{Remote magnetometers' proxy} (Section \ref{sec:rm-proxy})
+		\begin{itemize}
+			\item Generic SCPI interface (Feature \ref{subsec:rm-proxy_scpi}) powers the specification-compliant \cite{SCPIConsortium1999} error reporting.
+			\item Data interface (Feature \ref{subsec:rm-proxy_data}) integrates the pool of the remote magnetometers into the n2EDM DAQ system.
+			\item Configs' generator (Feature \ref{subsec:rm-proxy_configs}) removes the hurdle to manage the shared setup between the RM-proxy, the master node and the COM handler.
+		\end{itemize}
+	}
+	\item{
+		\textbf{SFC system} (Section \ref{sec:sfc})
+		\begin{itemize}
+			\item \textcolor{red}{Add information}
+		\end{itemize}
+	}
+\end{itemize}
+
+\textit{Potential improvements}:
+\begin{itemize}
+	\item{
+		\textbf{Sequencer} (Section \ref{sec:sequencer})
+		\begin{itemize}
+			\item Add the \texttt{BREAK} and \texttt{CONTINUE} commands to work with \texttt{FOR}.
+			\item Copy the error-resistant networking logic from the COM handler.
+			\item Adopt the standard error reporting as in the RM-proxy.
+			\item Allow for the non-blocking \texttt{REQUEST}s.
+		\end{itemize}
+	}
+	\item{
+		\textbf{COM Handler} (Section \ref{sec:com_handler})
+		\begin{itemize}
+			\item Adopt the standard error reporting as in the RM-proxy.
+			\item Graciously handle potential errors in the POSIX pipes.
+		\end{itemize}
+	}
+	\item{
+		\textbf{Remote magnetometers' proxy} (Section \ref{sec:rm-proxy})
+		\begin{itemize}
+			\item Extend the SCPI interface to enable the direct control over the remote magnetometers.
+			\item Automate the distribution of the generated configs.
+		\end{itemize}
+	}
+	\item{
+		\textbf{SFC system} (Section \ref{sec:sfc})
+		\begin{itemize}
+			\item \textcolor{red}{Add information}
+		\end{itemize}
+	}
+\end{itemize}
