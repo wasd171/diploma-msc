@@ -1,1 +1,626 @@
 \chapter{Sequencer}
+\label{appendix:sequencer}
+
+The folder \texttt{src} of the sequencer's repository contains the following files:
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|}
+	\hline
+	File name & Listing \\
+	\hline \hline
+	\texttt{CMakeLists.txt} & \ref{listing:CMakeLists.txt} \\
+	\hline
+	\texttt{RESUME.cpp} & x \\
+	\hline
+	\texttt{RESUME.hpp} & x \\
+	\hline
+	\texttt{analyse.cpp} & x \\
+	\hline
+	\texttt{analyse.hpp} & x \\
+	\hline
+	\texttt{conf\_sequencer.cfg.in} & x \\
+	\hline
+	\texttt{config.cpp} & x \\
+	\hline
+	\texttt{config.hpp} & x \\
+	\hline
+	\texttt{exprtk.hpp} & x \\
+	\hline
+	\texttt{exprtk\_readme.txt} & x \\
+	\hline
+	\texttt{n2EDMsequencerConfig.h.in} & x \\
+	\hline
+	\texttt{request.cpp} & x \\
+	\hline
+	\texttt{request.hpp} & x \\
+	\hline
+	\texttt{sciw.cpp} & x \\
+	\hline
+	\texttt{sciw.hpp} & x \\
+	\hline
+	\texttt{sequencer.cpp} & x \\
+	\hline
+	\texttt{sockets.cpp} & x \\
+	\hline
+	\texttt{sockets.hpp} & x \\
+	\hline
+	\texttt{state.cpp} & x \\
+	\hline
+	\texttt{state.hpp} & x \\
+	\hline
+	\texttt{test\_sequencer.cpp} & x \\
+	\hline
+	\texttt{utils.cpp} & x \\
+	\hline
+	\texttt{utils.hpp} & x \\
+	\hline
+\end{tabular}
+\caption{Contents of the \texttt{sequencer/src}.}
+\end{table}
+
+\begin{lstlisting}[
+	caption={\texttt{CMakeLists.txt}},
+	label={listing:CMakeLists.txt}
+]
+cmake_minimum_required (VERSION 3.5)
+project(n2EDM-sequencer)
+
+# The version number.
+set (n2EDM-sequencer_VERSION_MAJOR 0)
+set (n2EDM-sequencer_VERSION_MINOR 1)
+
+# set Makefile verbosity on
+set( CMAKE_VERBOSE_MAKEFILE on )
+
+# configure compiler version
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3)
+             message("Found g++ >= 7.3. Continuing")
+else()
+             message( FATAL_ERROR "Need g++ >= 7.3. Exiting" )
+endif()
+
+# configure compiler flags and echo them during cmake
+set(CMAKE_CXX_FLAGS "-g -Wall -Wpedantic -Wextra -Wshadow -Werror -std=c++14")
+message("CMAKE_CXX_FLAGS is ${CMAKE_CXX_FLAGS}")
+
+#set(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
+find_package (Threads)
+#set(DIRECTORIES build src utils)
+
+add_library(sequencerlib STATIC sequencer.cpp analyse.cpp RESUME.cpp sciw.cpp utils.cpp sockets.cpp config.cpp request.cpp state.cpp)
+
+add_executable(sequencer sequencer.cpp)
+target_link_libraries(sequencer sequencerlib ${CMAKE_THREAD_LIBS_INIT} config++)
+
+add_executable(test_sequencer test_sequencer.cpp sockets.cpp config.cpp)
+target_link_libraries(test_sequencer config++)
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/n2EDMsequencerConfig.h.in"
+  "${PROJECT_BINARY_DIR}/n2EDMsequencerConfig.h.in2"
+  )
+
+configure_file(conf_sequencer.cfg.in conf_sequencer.cfg COPYONLY)
+
+# --- Git revision ---
+add_dependencies(sequencer gitrev)      #put name of your target here
+add_dependencies(test_sequencer gitrev)      #put name of your target here
+include_directories(${CMAKE_CURRENT_BINARY_DIR})  #so that the include file is found
+set(gitrev_in n2EDMsequencerConfig.h.in2)  #just filenames, feel free to change them...
+set(gitrev n2EDMsequencerConfig.h)
+add_custom_target(gitrev
+  ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/${gitrev}
+  COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/${gitrev_in} ${CMAKE_CURRENT_BINARY_DIR}/${gitrev}
+  COMMAND ${CMAKE_COMMAND} -E remove -f ${PROJECT_BINARY_DIR}/${gitrev_in}
+  #COMMAND git rev-parse HEAD >> ${CMAKE_CURRENT_BINARY_DIR}/${gitrev}
+  COMMAND git describe --match=NeVeRmAtCh --always --abbrev=0 --dirty >> ${CMAKE_CURRENT_BINARY_DIR}/${gitrev}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}         #very important, otherwise git repo might not be found in shadow build
+  VERBATIM                                              #portability wanted
+)
+
+
+
+
+#install(TARGETS sequencer.exe DESTINATION ${CMAKE_SOURCE_DIR}/../build)
+#install(TARGETS test_sequencer.exe DESTINATION ${CMAKE_SOURCE_DIR}/../utils)
+#install(TARGETS sequencer ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/../build LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/../build)
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[
+	language=C++
+]
+#include <fstream>
+#include <string>
+#include <list>
+
+#include <iostream>
+
+#include <algorithm>
+#include <thread>
+
+#include <chrono>
+
+#include <map>
+#include <utility>
+
+#include <regex>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#include "RESUME.hpp"
+#include "sciw.hpp"
+#include "exprtk.hpp"
+#include "sockets.hpp"
+#include "request.hpp"
+
+// These come from state.cpp
+extern bool isPaused;
+extern bool isSleeping;
+
+auto endOfSleep = std::chrono::high_resolution_clock::now();
+int ifCounter = 0;
+int elseCounter = 0;
+
+// We use this variable to mark that
+// We are inside of the FOR loop with false condition
+bool skipUntilDone = false;
+// This is number of FOR (starting with the false one)
+// -
+// number of DONE
+int forDelta = 0;
+
+bool nearlyEqual(VARIABLE_VALUE a, VARIABLE_VALUE b, VARIABLE_VALUE epsilon)
+{
+  auto absA = fabs(a);
+  auto absB = fabs(b);
+  auto diff = fabs(a - b);
+  if (a == b)   // shortcut, handles infinities
+  {
+    return true;
+  }
+  else if (a == 0 || b == 0 || diff < std::numeric_limits<VARIABLE_VALUE>::min())
+  {
+    // a or b is zero or both are extremely close to it
+    // relative error is less meaningful here
+    return diff < (epsilon * std::numeric_limits<int>::min());
+  }
+  else   // use relative error
+  {
+    return diff / fmin((absA + absB), std::numeric_limits<int>::max()) < epsilon;
+  }
+}
+
+
+bool analyseExpression1(std::string exp, SEQUENCE& sequence,
+                        SEQUENCE::iterator& lineExecutedNext)
+{
+  trim(exp);
+  bool boolResultExp1 = false;
+  if(exp.find_first_of("><=") != std::string::npos)
+  {
+    std::size_t posOperator = exp.find_first_of("><=");
+    std::size_t posOperator2 = exp.find_last_of("><=");
+    std::string var1 = exp.substr(0, posOperator);
+    std::string var2 = exp.substr(posOperator2 + 1);
+    deleteDquotesBrackets(var2);
+    deleteDquotesBrackets(var1);
+    trim(var2);
+    trim(var1);
+    replaceVarInString(var2, sequence, lineExecutedNext);
+    replaceVarInString(var1, sequence, lineExecutedNext);
+    expressiont expression1;
+    expressiont expression2;
+    parsert parser;
+    parser.compile(var1, expression1);
+    parser.compile(var2, expression2);
+    auto v1Double = expression1.value();
+    auto v2Double = expression2.value();
+    if(exp[posOperator] == '>')
+    {
+      //>= case
+      if(exp[posOperator + 1] == '=')
+      {
+        boolResultExp1 = (v1Double > v2Double || nearlyEqual(v1Double, v2Double));
+      }
+      //> case
+      else
+      {
+        boolResultExp1 = v1Double > v2Double;
+      }
+    }
+    if(exp[posOperator] == '<')
+    {
+      //<= case
+      if(exp[posOperator + 1] == '=')
+      {
+        boolResultExp1 = (v1Double < v2Double || nearlyEqual(v1Double, v2Double));
+      }
+      //< case
+      else
+      {
+        boolResultExp1 = v1Double < v2Double;
+      }
+    }
+    if(exp[posOperator] == '=')
+    {
+      //== case
+      if(exp[posOperator + 1] == '=')
+      {
+        boolResultExp1 = nearlyEqual(v1Double, v2Double);
+      }
+    }
+  }
+  return boolResultExp1;
+}
+
+bool isThereLabel(SEQUENCE& sequence, SEQUENCE::iterator& lineExecutedNext,
+                  std::string label)
+{
+  //Go through the whole sequence to check if there is the desired label.
+  for (auto it = sequence.begin(); it != sequence.end(); ++it)
+  {
+    auto line = *it;
+    if (line.find("LABEL") != std::string::npos)
+    {
+      std::size_t linePos = line.find_first_of(' ') + 1;
+      std::string lineLabel = line.substr(linePos, line.size() - linePos);
+      trim(lineLabel);
+      if(lineLabel[0] == '\"' && lineLabel[lineLabel.length() - 1] == '\"')
+      {
+        lineLabel.erase(0, 1);
+        lineLabel.erase(lineLabel.length() - 1, 1);
+        trim(label);
+      }
+      if(lineLabel == label)
+      {
+        lineExecutedNext = it;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void resume(
+  SEQUENCE& sequence,
+  SEQUENCE::iterator& lineExecutedNext
+)
+{
+  auto blockedByRequests = areRequestsPending();
+
+  if (!isPaused && !isSleeping && !blockedByRequests)
+  {
+    //DO NOT EXECUTE COMMAND IF LINE_EXECUTED_NEXT IS AT THE END OF SEQUENCE
+    if (lineExecutedNext == sequence.end())
+    {
+      // We pause the execution
+      isPaused = true;
+    }
+    else if ((*lineExecutedNext)[0] != '#')
+    {
+      auto it = lineExecutedNext;
+      auto line_exe = *it;
+      auto myWordsResume = splitCommandInWords(line_exe);
+      auto wordInLineExecuted = myWordsResume.begin();
+      std::cout << "Command executed: " << '"' << *it << '"' << "\n";
+      ++lineExecutedNext;
+      //allow debuging
+      //std::this_thread::sleep_for(std::chrono::seconds(5));
+      //CASE: we are skipping the body of the falsy FOR cycle
+      if(skipUntilDone)
+      {
+        if (isForLine(line_exe))
+        {
+          ++forDelta;
+        }
+        else if (*wordInLineExecuted == "DONE")
+        {
+          // Not returning to FOR because the cycle has false condition
+          --forDelta;
+
+          // We might have reached the matching DONE for the falsy FOR
+          if (forDelta == 0)
+          {
+            skipUntilDone = false;
+          }
+        }
+      }
+      // Here and after we know that we don't skip lines
+      else if (isForLine(line_exe))
+      {
+        auto parsed = parseForLine(line_exe);
+        if (parsed.success)
+        {
+          setVariable(parsed.init, sequence, lineExecutedNext);
+          skipUntilDone = !analyseExpression1(parsed.test, sequence, lineExecutedNext);
+
+          // We need it to find the matching DONE later
+          if (skipUntilDone)
+          {
+            forDelta = 1;
+          }
+        }
+      }
+      else if (*wordInLineExecuted == "DO")
+      {
+        if (it == sequence.begin())
+        {
+          std::cerr << " error : DO is not expected to be a first line " << std::endl;
+        }
+        else
+        {
+          --it;
+          if (!isForLine(*it))
+          {
+            std::cerr << " error : we were expecting FOR in the line before DO " << std ::
+                      endl;
+          }
+        }
+      }
+      else if(*wordInLineExecuted == "DONE")
+      {
+        if (it == sequence.begin())
+        {
+          std::cerr << "error: was not expecting DONE on the first line" << std::endl;
+        }
+        else
+        {
+          int doneDelta = 1;
+          std::list<std::string> commandWords;
+          std::list<std::string>::iterator commandWordsIterator;
+
+          // We go up line by line to find the matching FOR
+          do
+          {
+            --it;
+            commandWords = splitCommandInWords(*it);
+            commandWordsIterator = commandWords.begin();
+
+            if (isForLine(*it))
+            {
+              --doneDelta;
+            }
+            else if (*commandWordsIterator == "DONE")
+            {
+              ++doneDelta;
+            }
+          }
+          while (
+            // Continue execution until either
+            // we found the matching FOR
+            // or
+            // we have reached the start of sequence
+            doneDelta != 0 && it != sequence.begin()
+          );
+
+          if (doneDelta != 0)
+          {
+            std::cerr << " error : DONE does not have a matching FOR , delta is " <<
+                      doneDelta << std :: endl;
+          }
+          else
+          {
+            // currently "it" points to the correct FOR line
+            auto parsed = parseForLine(*it);
+            if (!parsed.success)
+            {
+              std::cerr <<
+                        "error: unable to parse the FOR line found for the corresponding DONE, continuing execution from the line next to DONE"
+                        << std::endl;
+            }
+            else
+            {
+              setVariable(parsed.iterate, sequence, lineExecutedNext);
+              auto canRunAgain = analyseExpression1(parsed.test, sequence, lineExecutedNext);
+              if (!canRunAgain)
+              {
+                // Do nothing, FOR condition returned false and we continue execution as usual
+              }
+              else
+              {
+                if (it == sequence.end())
+                {
+                  std::cerr <<
+                            "error: was going up from DONE to find a matching FOR, but it seems that FOR is at the end of the sequence now"
+                            << std::endl;
+                }
+                else
+                {
+                  // Move to the FOR line + 1
+                  ++it;
+                  lineExecutedNext = it;
+                }
+              }
+
+            }
+          }
+        }
+      }
+      //CASE: SEND 'hallo $x Du', takes the words in singlequote and analyse them.
+      else if(*wordInLineExecuted == "SEND")
+      {
+        //points to 'hallo $x Du'
+        ++wordInLineExecuted;
+        std::string SCPICommand = *wordInLineExecuted;
+        replaceVarInString(SCPICommand, sequence, lineExecutedNext);
+        sendCommand(SCPICommand);
+      }
+      //CASE: :string
+      else if (*((*wordInLineExecuted).begin()) == ':')
+      {
+        std::string SCPICommand = *wordInLineExecuted;
+        sendCommand(SCPICommand);
+      }
+      //CASE: GOTO 'string'
+      else if (*wordInLineExecuted == "GOTO")
+      {
+        ++wordInLineExecuted;
+        std::string label = *wordInLineExecuted;
+        //check if "string" contains a variable, if yes change it to its value.
+        replaceVarInString(label, sequence, lineExecutedNext);
+        if(isThereLabel(sequence, lineExecutedNext, label))
+        {
+          it = lineExecutedNext;
+        }
+      }
+      //CASE: SLEEP 12.3s
+      else if (*wordInLineExecuted == "SLEEP")
+      {
+        ++wordInLineExecuted;
+        auto sleepValue = *wordInLineExecuted;
+        trim(sleepValue);
+        if(sleepValue[sleepValue.length() - 1] == 's')
+        {
+          sleepValue.erase(sleepValue.length() - 1, 1);
+          trim(sleepValue);
+        }
+        std::chrono::duration<float> sleepInSeconds(std::stof(sleepValue));
+        auto sleepInNanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>
+                                  (sleepInSeconds);
+        auto now = std::chrono::high_resolution_clock::now();
+
+        isSleeping = true;
+        endOfSleep = now + sleepInNanoseconds;
+      }
+      //CASE: IF expression1 THEN
+      //		expression2
+      //		ELSE
+      //		expression3
+      //		ENDIF
+      else if (*wordInLineExecuted == "IF")
+      {
+        std::list<std::string> myWordsResumeIF = splitCommandInWords(line_exe);
+        wordInLineExecuted = myWordsResumeIF.begin();
+        ++wordInLineExecuted;
+        line_exe = *wordInLineExecuted;
+        trim(line_exe);
+        if(line_exe.find("THEN") == std::string::npos)
+        {
+          std::cerr << "error: No IF without THEN!";
+          lineExecutedNext++;
+        }
+        else
+        {
+          std::size_t posTHEN = line_exe.find("THEN");
+          //line_exe = (expression1) expression2 ELSE expression3 ENDIF
+          line_exe.erase(posTHEN, 4);
+        }
+        //extract expression 1
+        auto expressionString = line_exe;
+        auto expressionBoolean = analyseExpression1(expressionString, sequence,
+                                 lineExecutedNext);
+        //expression 1 is TRUE
+        if(expressionBoolean)
+        {
+          ifCounter = 1;
+        }
+        else
+        {
+          ifCounter = 0;
+          for (std::list<std::string>::iterator ite = --lineExecutedNext;
+               ite != sequence.end(); ++ite)
+          {
+            if((*ite).find("IF") != std::string::npos
+                && (*ite).find("ENDIF") == std::string::npos)
+            {
+              ifCounter++;
+            }
+            else if((*ite).find("ELSE") != std::string::npos && ifCounter == 1)
+            {
+              lineExecutedNext = ite;
+              ++lineExecutedNext;
+              break;
+            }
+            else if((*ite).find("ENDIF") != std::string::npos)
+            {
+              ifCounter--;
+            }
+            if(ifCounter <= 0)
+            {
+              lineExecutedNext = ite;
+              break;
+            }
+          }
+        }
+      }
+      else if(*wordInLineExecuted == "ELSE")
+      {
+        if(ifCounter < 0)
+        {
+          std::cerr << "error:  found ELSE without prior matching IF \n";
+        }
+        else
+        {
+          elseCounter = elseCounter + ifCounter;
+          ifCounter = 1;
+          for (std::list<std::string>::iterator ite = lineExecutedNext;
+               ite != sequence.end(); ++ite)
+          {
+            if((*ite).find("IF") != std::string::npos
+                && (*ite).find("ENDIF") == std::string::npos)
+            {
+              ifCounter++;
+            }
+            else if((*ite).find("ENDIF") != std::string::npos)
+            {
+              ifCounter--;
+            }
+            if(ifCounter <= 0)
+            {
+              ifCounter = --elseCounter;
+              lineExecutedNext = ite;
+            }
+          }
+        }
+      }
+      //CASE: SET variablename=expression.
+      else if (*wordInLineExecuted == "SET")
+      {
+        handleSetLine(line_exe, sequence, lineExecutedNext);
+      }
+
+      myWordsResume.clear();
+    }
+    else
+    {
+      ++lineExecutedNext;
+    }
+  }
+
+  // Check whether we can stop sleeping
+  if (isSleeping)
+  {
+    auto now = std::chrono::high_resolution_clock::now();
+    if (now > endOfSleep)
+    {
+      isSleeping = false;
+    }
+  }
+
+  // Check whether some sequests have timed out
+  if (blockedByRequests)
+  {
+    checkRequestTimeout(sequence, lineExecutedNext);
+  }
+}
+\end{lstlisting}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
