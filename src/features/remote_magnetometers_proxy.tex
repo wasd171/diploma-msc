@@ -137,7 +137,7 @@ We define the \texttt{timestamp} as a minimal time among all the \texttt{node\_m
 
 \textit{Motivation}: we have 3 projects that share the configuration data: RM-proxy, COM handler and the master node. Apart from them, a configuration for the COM handler requires the specification for every binary field of the data package from the Feature \ref{subsec:rm-proxy_data}. One can see that the total number of fields to fill $1 + 13 \times N$, where $N$ is the number of magnetometers, quickly becomes unmaintainable by hand and error-prone.
 
-\textit{Requirements}: to solve these issues we introduce a single source of truth: a root config and a script that handles other configs as the build artefacts. The root config is written in a \texttt{libconfig}-compatible format. 
+\textit{Requirements}: to solve these issues we introduce a single source of truth: a root config and a script that treats other configs as the build artefacts. The root config is written in a \texttt{libconfig}-compatible format. 
 
 \textit{Implementation details}: Assuming that one is in the root of the RM-proxy's repository we will take a look at the \texttt{src/root\_config.cfg} on the Listing \ref{listing:rm-proxy_root} and explain every field.
 
