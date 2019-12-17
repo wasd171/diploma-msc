@@ -145,7 +145,7 @@ fluxgates = (
 	\item \texttt{sfcScpiPort} and \texttt{sfcDataPort}, required integers --- the ports for the SCPI and data connections, respectively. TCP server of the SFC awaits for the TCP client of the COM handler on them.
 	\item \texttt{inputDelayCycles}, required integer --- an empirical value of the delay between setting the voltages in the DAC and reading the field change in the ADC.
 	\item \texttt{cycleFrequencyHertz}, required integer --- a frequency of the SFC feedback and data collection loop.
-	\item \texttt{dacModulesRange}, required string --- a Julia-inspired \cite{Juliacontributors} range describing the position of the DAC modules in the device chain. Enumeration starts with 1, last value is included. Only a \texttt{start:end}, where $\texttt{start} < \texttt{end}$, format is supported. It is expected that both the DAC and the ADC modules are installed in homogeneous blocks with the ADC partition immediately following the DAC region. This allows us to address the DAC and ADC channels without the need to specify the module position. For example, a channel 1 in the DAC module 2 can be targeted with $\texttt{dacChannelNumber} = 5$ (see below in the \texttt{coils} section). Same approach is used for the ADC channels in the \texttt{fluxgates} section of the present configuration file. Just like the indexing of the modules themselves, the indexing of the DAC and ADC channels starts with 1.
+	\item \texttt{dacModulesRange}, required string --- a Julia-inspired \cite{Juliacontributors} range describing the position of the DAC modules in the device chain. Enumeration starts with 1, last value is included. Only a \texttt{start:end}, where $\texttt{start} < \texttt{end}$, format is supported. It is expected that both the DAC and the ADC modules are installed in homogeneous blocks with the ADC partition immediately following the DAC region. This allows us to address the DAC and ADC channels without the need to specify the module position. For example, a channel 1 in the DAC module 2 can be targeted with $\texttt{dacChannelNumber} = 5$ (see below in the \texttt{coils} section). Same approach is used for the ADC channels in the \texttt{fluxgates} section of the present configuration file. Just like the indexing of the modules themselves, the independent indexing of the DAC and ADC channels starts with 1.
 	\item \texttt{dacChannelsPerModule}, required integer --- self-explanatory, is 4 for the Beckhoff EL4134 \cite{BeckhoffDAC2019}.
 	\item \texttt{adcModulesRange}, required string --- follows the specification described for the \texttt{dacModulesRange} but characterises the ADC modules. 
 	\item \texttt{adcChannelsPerModule}, required integer --- self-explanatory, is 2 for the Beckhoff EL3602 \cite{BeckhoffADC2019}.
@@ -158,7 +158,7 @@ fluxgates = (
 				\texttt{amplifiers}, required array --- describes the amplifiers driving this coil. The children have these fields:
 				\begin{itemize}
 					\item \texttt{dacChannelNumber}, required integer --- a number of the DAC channel managing this amplifier. Must be consistent with the specification presented at the \texttt{dacModulesRange} description.
-					\item \texttt{dacOutputVoltageAtNominalField\_in\_V}, required integer --- an output voltage of this DAC channel when the corresponding coil is set to generate the nominal field. In the \texttt{STATIC} mode this SCPI command from the Feature \ref{subsec:sfc_scpi} would set this voltage value: "\texttt{COIL coil\_index, 1}".
+					\item \texttt{dacOutputVoltageAtNominalField\_in\_V}, required integer -- an output voltage of this DAC channel when the corresponding coil is set to generate the nominal field. In the \texttt{STATIC} mode this SCPI command from the Feature \ref{subsec:sfc_scpi} would set this voltage value: "\texttt{COIL coil\_index, 1}".
 					\item \texttt{amplifierGain\_in\_AmperPer10Volt}, required integer --- is used to characterise the connected amplifier.
 				\end{itemize}
 			}
@@ -169,12 +169,12 @@ fluxgates = (
 		\begin{itemize}
 			\item \texttt{name}, required string --- a label used to distinguish different fluxgates. Is included into the COM handler's config for the further data analysis.
 			\item \texttt{location}, required string --- relates to the physical location of the fluxgate. Is also included in the COM handler's configuration file.
-			\texttt{channels}, required object --- an object with the keys \texttt{x}, \texttt{y}, and \texttt{z} in a flexible order. Every value of the subfield corresponds to the ADC channel connected to measure the related component of the magnetic field. The channel numbers conform to the specification introduced in the \texttt{dacModulesRange} decription.
+			\item \texttt{channels}, required object --- an object with the keys \texttt{x}, \texttt{y}, and \texttt{z} in a flexible order. Every value of the subfield corresponds to the ADC channel connected to measure the related component of the magnetic field. The channel numbers conform to the specification introduced in the \texttt{dacModulesRange} decription.
 		\end{itemize}
 	}
 \end{itemize}
 
-Executing the command below from the SFC repository root:
+Executing the command below from the SFC repository root
 \begin{verbatim}
 python3 ./generate_configs.py
 \end{verbatim}
