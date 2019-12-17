@@ -38,9 +38,9 @@ We introduce the following 2 commands to control the experimental setup:
 
 \textit{Motivation}: in the n2EDM DAQ system the COM handler is responsible for writing the data to the disk for the further analysis thus it is the job of the SFC to bundle it into a binary message and send the package over TCP.
 
-\textit{Requirements}: we are interested in recording the input and output data of the SFC. The core part of controlling the magnetic field is a set of $N_{coils}$ magnetic coils \cite{Rawlik2018}. Each coil is driven by 3 amplifiers, however this ratio may vary in the future. Every amplifier is connected to a dedicated channel on the Beckhoff EL4134 \cite{BeckhoffDAC2019} analog output terminal, referred later to as the \textbf{DAC module}. There are $N_{modules}^{DAC} = 3$ DAC modules with $N_{channels}^{DAC} = 4$ channels each. The readout of the magnetic field is performed through a set of the $N_{fluxgates}$ triple-axis fluxgates. In total each of the $3 * N_{fluxgates}$ sensors is connected to a separate channel on the Beckhoff EL3602 \cite{BeckhoffADC2019} analog input terminals or the \textbf{ADC modules}. The SFC system operates $N_{modules}^{ADC} = 17$ ADC modules each possessing $N_{channels}^{ADC} = 2$ channels. 
+\textit{Requirements}: we are interested in recording the input and output data of the SFC. The core part of controlling the magnetic field is a set of $N_{coils}$ magnetic coils \cite{Rawlik2018}. Each coil is driven by 3 amplifiers, however this ratio may vary in the future. Every amplifier is connected to a dedicated channel on the Beckhoff EL4134 \cite{BeckhoffDAC2019} analog output terminal, referred later to as the \textbf{DAC module}. There are $N_{modules}^{DAC} = 3$ DAC modules with $N_{channels}^{DAC} = 4$ channels each. The readout of the magnetic field is performed through a set of the $N_{fluxgates}$ triple-axis fluxgates. In total each of the $3 * N_{fluxgates}$ sensors is connected to a separate channel on one of the Beckhoff EL3602 \cite{BeckhoffADC2019} analog input terminal or the \textbf{ADC module}. The SFC system operates $N_{modules}^{ADC} = 17$ ADC modules each possessing $N_{channels}^{ADC} = 2$ channels. 
 
-\textit{Implementation details}: let us provide an in-depth analysis of the shape of the data message presented in the Table \ref{tbl:sfc_data_message}.
+\textit{Implementation details}: let us provide an analysis of the shape of the data message presented in the Table \ref{tbl:sfc_data_message}.
 
 \renewcommand{\arraystretch}{1.4}
 \begin{table}[h]
@@ -70,7 +70,7 @@ We introduce the following 2 commands to control the experimental setup:
 	\item \texttt{voltage @ dac\_channel\_*} --- an output voltage in the DAC channel, always 0 if this channel does not have a coil connected.
 	\item \texttt{current @ dac\_channel\_*} --- an expected output current of the amplifier connected to the corresponding DAC channel. Always 0 if no connected coil is present.
 	\item \texttt{voltage @ adc\_channel\_*} --- a voltage measured in the ADC channel. Either the value read from one of the fluxgate's sensors or noise.
-	\item \texttt{current @ coil\_*} --- a ratio of the immediate current in the coil to the current at a generated nominal field.
+	\item \texttt{current @ coil\_*} --- a ratio of the immediate current in the coil to the current at a generated nominal field in percents.
 \end{itemize}
 
 \subsection{Generation of the configs}
@@ -165,10 +165,10 @@ fluxgates = (
 		\end{itemize}
 	}
 	\item{
-		\texttt{fluxgates}, required array --- depicts the fluxgates used to read out the magnetic field. Encloses the objects with the following properties:
+		\texttt{fluxgates}, required array --- depicts the fluxgates used to read out the magnetic field. Encloses the items with the following properties:
 		\begin{itemize}
 			\item \texttt{name}, required string --- a label used to distinguish different fluxgates. Is included into the COM handler's config for the further data analysis.
-			\item \texttt{location}, required string --- relates to the physical location of the fluxgate. Is also included in the COM handler's configuration file.
+			\item \texttt{location}, required string --- relates to the physical location of the fluxgate. Is also included in the COM handler's configuration.
 			\item \texttt{channels}, required object --- an object with the keys \texttt{x}, \texttt{y}, and \texttt{z} in a flexible order. Every value of the subfield corresponds to the ADC channel connected to measure the related component of the magnetic field. The channel numbers conform to the specification introduced in the \texttt{dacModulesRange} decription.
 		\end{itemize}
 	}
