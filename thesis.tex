@@ -166,6 +166,10 @@
 %% Define some paths to be shared
 \newcommand*{\FeaturesPath}{src/features}
 
+%% Needed to include the SVG from Inkscape
+\usepackage{pstricks}
+\usepackage{auto-pst-pdf}
+
 %% Document information
 %% ====================
 
@@ -208,12 +212,10 @@
 \input{src/experiment}
 \input{src/daq}
 \input{\FeaturesPath/index}
-%\input{results}
-%\input{outlook}
 \input{src/conclusions}
 
 \appendix
-%\input{src/appendix_sequencer}
+\input{src/appendix_finish}
 
 \backmatter
 
