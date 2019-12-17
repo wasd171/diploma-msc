@@ -11,7 +11,7 @@ Looking back it is possible to say that the initial task of improving the ease o
 			\item Better \texttt{REQUEST} command (Feature \ref{sec:request}) opens the doors to more predictable handling of the asynchronous patterns.
 			\item Standard TCP/IP interface (Feature \ref{sec:tcp_ip_sequencer}) brings all the features that the integration with the COM handler supports.
 			\item Improved \texttt{SHOWVARIABLES?} command (Feature \ref{sec:showvariables}) sending the result over the SCPI connection makes it possible for the other nodes to know the internal state of the sequencer.
-			\item Enhanced \texttt{SHOWLINES?} command (Feature \ref{sec:showlines}) allows the precise remote SCPI control of the sequencer's execution.
+			\item Enhanced \texttt{SHOWLINES?} command (Feature \ref{sec:showlines}) allows for the precise remote SCPI control of the sequencer's execution.
 		\end{itemize}
 	}
 	\item{
@@ -32,7 +32,9 @@ Looking back it is possible to say that the initial task of improving the ease o
 	\item{
 		\textbf{SFC system} (Section \ref{sec:sfc})
 		\begin{itemize}
-			\item \textcolor{red}{Add information}
+			\item SCPI interface (Feature \ref{subsec:sfc_scpi}) replaces the existing Python GUI providing the commands to set the currents of the individual coils and to toggle the SFC between the \texttt{STATIC} and \texttt{DYNAMIC} regimes.
+			\item Data interface (Feature \ref{subsec:sfc_data}) allows us to transmit and store the operational parameters of the SFC system in a standard \cite{Bison2018} way. 
+			\item Configs' generator (Feature \ref{subsec:sfc_configs}) assures that the configurations of the COM handler and the SFC are resistant to human errors and are always kept in sync.
 		\end{itemize}
 	}
 \end{itemize}
@@ -65,7 +67,12 @@ Looking back it is possible to say that the initial task of improving the ease o
 	\item{
 		\textbf{SFC system} (Section \ref{sec:sfc})
 		\begin{itemize}
-			\item \textcolor{red}{Add information}
+			\item Adopt the standard error reporting as in the RM-proxy.
+			\item Impose stricter requirements on the configs' generation step by demanding uniqueness of the DAC/ADC ports as well as the names of the coils and the fluxgates.
+			\item Support more SCPI commands for measuring, storing, loading, and sending over TCP the feedback matrix \cite{Franke2013, Rawlik2018a}.
+			\item Migrate the legacy service scripts from raw manipulation of the internal variables to using the defined set of SCPI commands.
+			\item Make sure that the SFC system works on newer OpenSUSE.
+			\item Improve the SFC performance and robustness.
 		\end{itemize}
 	}
 \end{itemize}
